@@ -1,0 +1,123 @@
+[
+  {
+    "id": "HADIR",
+    "label": "Hadir",
+    "labelEn": "Present",
+    "color": "#22c55e",
+    "bgColor": "#dcfce7",
+    "getMealAllowance": true,
+    "countAsWorkDay": true,
+    "requiresCheckIn": true,
+    "order": 1
+  },
+  {
+    "id": "TERLAMBAT",
+    "label": "Terlambat",
+    "labelEn": "Late",
+    "color": "#f97316",
+    "bgColor": "#ffedd5",
+    "getMealAllowance": true,
+    "countAsWorkDay": true,
+    "requiresCheckIn": true,
+    "order": 2
+  },
+  {
+    "id": "WFH",
+    "label": "WFH",
+    "labelEn": "Work From Home",
+    "color": "#3b82f6",
+    "bgColor": "#dbeafe",
+    "getMealAllowance": false,
+    "countAsWorkDay": true,
+    "requiresCheckIn": false,
+    "order": 3
+  },
+  {
+    "id": "IZIN",
+    "label": "Izin",
+    "labelEn": "Permission",
+    "color": "#a855f7",
+    "bgColor": "#f3e8ff",
+    "getMealAllowance": false,
+    "countAsWorkDay": false,
+    "requiresCheckIn": false,
+    "order": 4
+  },
+  {
+    "id": "SAKIT",
+    "label": "Sakit",
+    "labelEn": "Sick",
+    "color": "#ef4444",
+    "bgColor": "#fee2e2",
+    "getMealAllowance": false,
+    "countAsWorkDay": false,
+    "requiresCheckIn": false,
+    "order": 5
+  },
+  {
+    "id": "CUTI",
+    "label": "Cuti",
+    "labelEn": "Annual Leave",
+    "color": "#06b6d4",
+    "bgColor": "#cffafe",
+    "getMealAllowance": false,
+    "countAsWorkDay": false,
+    "requiresCheckIn": false,
+    "order": 6
+  },
+  {
+    "id": "DINAS_LUAR",
+    "label": "Dinas Luar",
+    "labelEn": "Field Duty",
+    "color": "#eab308",
+    "bgColor": "#fef9c3",
+    "getMealAllowance": true,
+    "countAsWorkDay": true,
+    "requiresCheckIn": false,
+    "order": 7
+  },
+  {
+    "id": "SIDANG",
+    "label": "Sidang",
+    "labelEn": "Court/Session",
+    "color": "#8b5cf6",
+    "bgColor": "#ede9fe",
+    "getMealAllowance": true,
+    "countAsWorkDay": true,
+    "requiresCheckIn": false,
+    "order": 8
+  },
+  {
+    "id": "PENDAMPINGAN",
+    "label": "Pendampingan",
+    "labelEn": "Assistance Duty",
+    "color": "#0ea5e9",
+    "bgColor": "#e0f2fe",
+    "getMealAllowance": true,
+    "countAsWorkDay": true,
+    "requiresCheckIn": false,
+    "order": 9
+  },
+  {
+    "id": "LIBUR",
+    "label": "Libur",
+    "labelEn": "Holiday",
+    "color": "#6b7280",
+    "bgColor": "#f3f4f6",
+    "getMealAllowance": false,
+    "countAsWorkDay": false,
+    "requiresCheckIn": false,
+    "order": 10
+  },
+  {
+    "id": "ALPHA",
+    "label": "Alpha",
+    "labelEn": "Absent",
+    "color": "#dc2626",
+    "bgColor": "#fca5a5",
+    "getMealAllowance": false,
+    "countAsWorkDay": false,
+    "requiresCheckIn": false,
+    "order": 11
+  }
+]
