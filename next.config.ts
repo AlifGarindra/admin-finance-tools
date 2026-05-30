@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  devIndicators: false,
+
   // Turbopack (dev) — ExcelJS works fine without special config
   turbopack: {},
 
