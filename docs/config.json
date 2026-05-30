@@ -1,0 +1,55 @@
+{
+  "app": {
+    "name": "HR Admin Tool",
+    "version": "1.0.0",
+    "locale": "id-ID",
+    "timezone": "Asia/Jakarta",
+    "currency": "IDR",
+    "currencySymbol": "Rp"
+  },
+  "attendance": {
+    "defaultCheckInTime": "08:00",
+    "defaultCheckOutTime": "17:00",
+    "lateToleranceMinutes": 15,
+    "workDays": ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"],
+    "highlightLateColor": "#f97316",
+    "highlightAbsentColor": "#ef4444"
+  },
+  "mealAllowance": {
+    "defaultAmount": 40000,
+    "deductionOnIzin": true,
+    "deductionOnSakit": true,
+    "deductionOnCuti": true,
+    "deductionOnAlpha": true,
+    "noDeductionOnWFH": false,
+    "noDeductionOnDinasLuar": false
+  },
+  "export": {
+    "defaultFileName": "Rekap_HR",
+    "excelSheetNames": {
+      "attendance": "Rekap Absensi",
+      "mealAllowance": "Uang Makan"
+    }
+  },
+  "pagination": {
+    "defaultPageSize": 20,
+    "pageSizeOptions": [10, 20, 50, 100]
+  },
+  "publicHolidays2026": [
+    { "date": "2026-01-01", "name": "Tahun Baru Masehi" },
+    { "date": "2026-01-27", "name": "Isra Miraj" },
+    { "date": "2026-02-17", "name": "Hari Raya Imlek" },
+    { "date": "2026-03-20", "name": "Hari Raya Nyepi" },
+    { "date": "2026-04-03", "name": "Wafat Isa Almasih" },
+    { "date": "2026-04-20", "name": "Idul Fitri" },
+    { "date": "2026-04-21", "name": "Idul Fitri (Cuti Bersama)" },
+    { "date": "2026-05-14", "name": "Kenaikan Isa Almasih" },
+    { "date": "2026-05-23", "name": "Hari Raya Waisak" },
+    { "date": "2026-06-01", "name": "Hari Lahir Pancasila" },
+    { "date": "2026-06-27", "name": "Idul Adha" },
+    { "date": "2026-07-17", "name": "Tahun Baru Islam" },
+    { "date": "2026-08-17", "name": "HUT Kemerdekaan RI" },
+    { "date": "2026-09-25", "name": "Maulid Nabi Muhammad SAW" },
+    { "date": "2026-12-25", "name": "Hari Raya Natal" }
+  ]
+}

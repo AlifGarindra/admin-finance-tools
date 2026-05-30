@@ -1,0 +1,39 @@
+{
+  "auth": {
+    "INVALID_CREDENTIALS": "Email atau password salah. Silakan coba lagi.",
+    "SESSION_EXPIRED": "Sesi kamu sudah habis. Silakan login kembali.",
+    "UNAUTHORIZED": "Kamu tidak memiliki akses ke halaman ini.",
+    "LOGOUT_FAILED": "Gagal logout. Silakan coba lagi."
+  },
+  "employee": {
+    "NOT_FOUND": "Data karyawan tidak ditemukan.",
+    "DUPLICATE_NAME": "Karyawan dengan nama ini sudah terdaftar.",
+    "CREATE_FAILED": "Gagal menambahkan karyawan. Silakan coba lagi.",
+    "UPDATE_FAILED": "Gagal mengupdate data karyawan.",
+    "DELETE_FAILED": "Gagal menghapus karyawan.",
+    "DEACTIVATE_FAILED": "Gagal menonaktifkan karyawan.",
+    "HAS_ATTENDANCE": "Karyawan ini memiliki data absensi. Nonaktifkan saja, jangan hapus."
+  },
+  "attendance": {
+    "NOT_FOUND": "Data absensi tidak ditemukan.",
+    "DUPLICATE_ENTRY": "Absensi untuk karyawan ini pada tanggal ini sudah ada.",
+    "INVALID_DATE": "Tanggal tidak valid.",
+    "FUTURE_DATE": "Tidak bisa input absensi untuk tanggal yang belum terjadi.",
+    "CHECKOUT_BEFORE_CHECKIN": "Jam keluar tidak boleh lebih awal dari jam masuk.",
+    "INVALID_TIME_FORMAT": "Format jam tidak valid. Gunakan format HH:mm (contoh: 08:30).",
+    "CREATE_FAILED": "Gagal menyimpan absensi. Silakan coba lagi.",
+    "UPDATE_FAILED": "Gagal mengupdate absensi.",
+    "BULK_CREATE_FAILED": "Gagal menyimpan beberapa data absensi."
+  },
+  "export": {
+    "NO_DATA": "Tidak ada data untuk diekspor pada periode ini.",
+    "EXPORT_FAILED": "Gagal mengekspor data. Silakan coba lagi.",
+    "INVALID_PERIOD": "Periode tidak valid untuk export."
+  },
+  "general": {
+    "NETWORK_ERROR": "Koneksi bermasalah. Periksa internet kamu dan coba lagi.",
+    "SERVER_ERROR": "Terjadi kesalahan pada server. Silakan coba beberapa saat lagi.",
+    "VALIDATION_ERROR": "Ada data yang tidak valid. Periksa kembali isian kamu.",
+    "UNKNOWN_ERROR": "Terjadi kesalahan tidak terduga. Silakan refresh halaman."
+  }
+}

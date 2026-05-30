@@ -1,0 +1,2812 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HR Admin Tool — Simbolon &amp; Partners</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --color-primary: #4F46E5; --color-primary-light: #4F46E52e; }
+    html, body, #root { height: 100%; }
+    body { font-family: 'Inter', sans-serif; background: #F8FAFC; color: #0F172A; -webkit-font-smoothing: antialiased; }
+    @keyframes slideUp { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
+    input[type="time"]::-webkit-calendar-picker-indicator { opacity: 0.4; cursor: pointer; }
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button { opacity: 0.5; }
+    table { user-select: none; }
+  </style>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js"
+    integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L"
+    crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"
+    integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm"
+    crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"
+    integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y"
+    crossorigin="anonymous"></script>
+</head>
+<body>
+  <div id="root"></div>
+
+  <!-- data.jsx -->
+  <script type="text/babel">
+// ============================================================
+// data.jsx — HR Admin Tool: Data Layer
+// Simbolon & Partners — May 2026
+// ============================================================
+
+const TODAY_DATE = new Date(2026, 4, 23); // May 23, 2026 (Saturday)
+const CURRENT_MONTH = { year: 2026, month: 4 }; // 0-indexed
+
+const STATUS_CONFIG = {
+  hadir:        { label: 'Hadir',         color: '#22c55e', bg: '#f0fdf4', bold: false },
+  terlambat:    { label: 'Terlambat',     color: '#f97316', bg: '#fff7ed', bold: false },
+  wfh:          { label: 'WFH',           color: '#3b82f6', bg: '#eff6ff', bold: false },
+  izin:         { label: 'Izin',          color: '#a855f7', bg: '#faf5ff', bold: false },
+  sakit:        { label: 'Sakit',         color: '#ef4444', bg: '#fef2f2', bold: false },
+  cuti:         { label: 'Cuti',          color: '#06b6d4', bg: '#ecfeff', bold: false },
+  dinas_luar:   { label: 'Dinas Luar',    color: '#eab308', bg: '#fefce8', bold: false },
+  sidang:       { label: 'Sidang',        color: '#8b5cf6', bg: '#f5f3ff', bold: false },
+  pendampingan: { label: 'Pendampingan',  color: '#0ea5e9', bg: '#f0f9ff', bold: false },
+  alpha:        { label: 'Alpha',         color: '#dc2626', bg: '#fef2f2', bold: true  },
+};
+
+// Statuses that count toward meal allowance
+const MEAL_ELIGIBLE = ['hadir', 'terlambat', 'wfh', 'dinas_luar', 'sidang', 'pendampingan'];
+
+const INITIAL_EMPLOYEES = [
+  { id: 1, name: 'Budi Santoso',   role: 'Staff Admin',     tarif: 25000, active: true, phone: '0812-3456-7890', email: 'budi@simbolon.co.id',  joinDate: '2022-03-15' },
+  { id: 2, name: 'Sari Dewi',      role: 'HR Officer',      tarif: 25000, active: true, phone: '0812-3456-7891', email: 'sari@simbolon.co.id',   joinDate: '2021-08-01' },
+  { id: 3, name: 'Ahmad Fauzi',    role: 'Finance Staff',   tarif: 25000, active: true, phone: '0812-3456-7892', email: 'ahmad@simbolon.co.id',  joinDate: '2023-01-10' },
+  { id: 4, name: 'Rina Putri',     role: 'Marketing Staff', tarif: 25000, active: true, phone: '0812-3456-7893', email: 'rina@simbolon.co.id',   joinDate: '2022-06-20' },
+  { id: 5, name: 'Dimas Prasetyo', role: 'IT Support',      tarif: 25000, active: true, phone: '0812-3456-7894', email: 'dimas@simbolon.co.id',  joinDate: '2023-05-01' },
+];
+
+// May 2026 Indonesian public holidays
+const HOLIDAYS_MAY_2026 = {
+  1:  'Hari Buruh',
+  20: 'Hari Kebangkitan Nasional',
+};
+
+function getDaysInMonth(year, month) {
+  const count = new Date(year, month + 1, 0).getDate();
+  const NAMES = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+  return Array.from({ length: count }, (_, i) => {
+    const d = i + 1;
+    const date = new Date(year, month, d);
+    const dow = date.getDay();
+    const isHol = year === 2026 && month === 4 && !!HOLIDAYS_MAY_2026[d];
+    return {
+      day: d,
+      date,
+      dayName: NAMES[dow],
+      isWeekend: dow === 0 || dow === 6,
+      isHoliday: isHol,
+      holidayName: isHol ? HOLIDAYS_MAY_2026[d] : null,
+      isPast: date < TODAY_DATE,
+      isToday: date.toDateString() === TODAY_DATE.toDateString(),
+    };
+  });
+}
+
+// Attendance: empId → { day: { status, timeIn, timeOut } }
+const INITIAL_ATTENDANCE = {
+  1: { // Budi Santoso
+    4:  { status: 'hadir',     timeIn: '07:58', timeOut: '17:02' },
+    5:  { status: 'hadir',     timeIn: '08:01', timeOut: '17:00' },
+    6:  { status: 'terlambat', timeIn: '09:15', timeOut: '17:30' },
+    7:  { status: 'hadir',     timeIn: '07:55', timeOut: '17:00' },
+    8:  { status: 'hadir',     timeIn: '08:00', timeOut: '17:00' },
+    11: { status: 'wfh',       timeIn: '08:00', timeOut: '17:00' },
+    12: { status: 'hadir',     timeIn: '07:59', timeOut: '17:01' },
+    13: { status: 'hadir',     timeIn: '08:02', timeOut: '17:00' },
+    14: { status: 'hadir',     timeIn: '08:00', timeOut: '17:00' },
+    15: { status: 'hadir',     timeIn: '07:57', timeOut: '17:00' },
+    18: { status: 'hadir',     timeIn: '08:03', timeOut: '17:00' },
+    19: { status: 'izin',      timeIn: '',      timeOut: ''      },
+    21: { status: 'hadir',     timeIn: '08:00', timeOut: '17:00' },
+    22: { status: 'hadir',     timeIn: '07:58', timeOut: '17:00' },
+  },
+  2: { // Sari Dewi
+    4:  { status: 'hadir',     timeIn: '08:00', timeOut: '17:00' },
+    5:  { status: 'terlambat', timeIn: '08:45', timeOut: '17:30' },
+    6:  { status: 'hadir',     timeIn: '08:00', timeOut: '17:00' },
+    7:  { status: 'hadir',     timeIn: '08:00', timeOut: '17:00' },
+    8:  { status: 'sakit',     timeIn: '',      timeOut: ''      },
+    11: { status: 'sakit',     timeIn: '',      timeOut: ''      },
+    12: { status: 'hadir',     timeIn: '08:10', timeOut: '17:00' },
+    13: { status: 'hadir',     timeIn: '08:00', timeOut: '17:00' },
+    14: { status: 'wfh',       timeIn: '08:00', timeOut: '17:00' },
+    15: { status: 'hadir',     timeIn: '07:58', timeOut: '17:00' },
+    18: { status: 'hadir',     timeIn: '08:00', timeOut: '17:00' },
+    19: { status: 'hadir',     timeIn: '08:00', timeOut: '17:00' },
+    21: { status: 'cuti',      timeIn: '',      timeOut: ''      },
+    22: { status: 'hadir',     timeIn: '08:05', timeOut: '17:00' },
+  },
+  3: { // Ahmad Fauzi
+    4:  { status: 'hadir',      timeIn: '07:50', timeOut: '17:00' },
+    5:  { status: 'hadir',      timeIn: '08:00', timeOut: '17:00' },
+    6:  { status: 'hadir',      timeIn: '08:00', timeOut: '17:15' },
+    7:  { status: 'dinas_luar', timeIn: '08:00', timeOut: '17:00' },
+    8:  { status: 'dinas_luar', timeIn: '08:00', timeOut: '17:00' },
+    11: { status: 'hadir',      timeIn: '08:00', timeOut: '17:00' },
+    12: { status: 'terlambat',  timeIn: '09:30', timeOut: '17:30' },
+    13: { status: 'hadir',      timeIn: '08:00', timeOut: '17:00' },
+    14: { status: 'hadir',      timeIn: '08:00', timeOut: '17:00' },
+    15: { status: 'hadir',      timeIn: '07:55', timeOut: '17:00' },
+    18: { status: 'wfh',        timeIn: '08:00', timeOut: '17:00' },
+    19: { status: 'hadir',      timeIn: '08:00', timeOut: '17:00' },
+    21: { status: 'hadir',      timeIn: '08:02', timeOut: '17:00' },
+    22: { status: 'hadir',      timeIn: '07:58', timeOut: '17:00' },
+  },
+  4: { // Rina Putri
+    4:  { status: 'hadir',     timeIn: '08:00', timeOut: '17:00' },
+    5:  { status: 'hadir',     timeIn: '08:00', timeOut: '17:00' },
+    6:  { status: 'hadir',     timeIn: '08:05', timeOut: '17:00' },
+    7:  { status: 'hadir',     timeIn: '08:00', timeOut: '17:00' },
+    8:  { status: 'terlambat', timeIn: '08:55', timeOut: '17:00' },
+    11: { status: 'hadir',     timeIn: '08:00', timeOut: '17:00' },
+    12: { status: 'hadir',     timeIn: '08:00', timeOut: '17:00' },
+    13: { status: 'izin',      timeIn: '',      timeOut: ''      },
+    14: { status: 'izin',      timeIn: '',      timeOut: ''      },
+    15: { status: 'hadir',     timeIn: '08:00', timeOut: '17:00' },
+    18: { status: 'hadir',     timeIn: '07:58', timeOut: '17:00' },
+    19: { status: 'alpha',     timeIn: '',      timeOut: ''      },
+    21: { status: 'hadir',     timeIn: '08:00', timeOut: '17:00' },
+    22: { status: 'hadir',     timeIn: '07:56', timeOut: '17:00' },
+  },
+  5: { // Dimas Prasetyo
+    4:  { status: 'hadir',     timeIn: '08:00', timeOut: '17:00' },
+    5:  { status: 'wfh',       timeIn: '08:00', timeOut: '17:00' },
+    6:  { status: 'wfh',       timeIn: '08:00', timeOut: '17:00' },
+    7:  { status: 'hadir',     timeIn: '07:52', timeOut: '17:00' },
+    8:  { status: 'hadir',     timeIn: '08:00', timeOut: '17:00' },
+    11: { status: 'hadir',     timeIn: '08:00', timeOut: '17:00' },
+    12: { status: 'hadir',     timeIn: '08:00', timeOut: '17:00' },
+    13: { status: 'sidang',    timeIn: '08:00', timeOut: '14:00' },
+    14: { status: 'hadir',     timeIn: '08:00', timeOut: '17:00' },
+    15: { status: 'hadir',     timeIn: '07:59', timeOut: '17:00' },
+    18: { status: 'hadir',     timeIn: '08:00', timeOut: '17:00' },
+    19: { status: 'hadir',     timeIn: '08:01', timeOut: '17:00' },
+    21: { status: 'terlambat', timeIn: '09:10', timeOut: '17:30' },
+    22: { status: 'hadir',     timeIn: '08:00', timeOut: '17:00' },
+  },
+};
+
+const INITIAL_SETTINGS = {
+  jamMasuk: '08:00',
+  toleransiMenit: 15,
+  hariKerja: [1, 2, 3, 4, 5], // Mon–Fri
+  tarifMakanDefault: 25000,
+  potonganAlpha: true,
+  namaPerusahaan: 'Simbolon & Partners',
+};
+
+// ── Utilities ──────────────────────────────────────────────
+function getInitials(name) {
+  return name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase();
+}
+
+function formatRupiah(n) {
+  return 'Rp ' + Number(n).toLocaleString('id-ID');
+}
+
+function getAvatarColor(id) {
+  const colors = ['#4F46E5', '#059669', '#7C3AED', '#E11D48', '#0EA5E9'];
+  return colors[(id - 1) % colors.length];
+}
+
+function calcMealEligibleDays(empId, attendanceData) {
+  const empData = attendanceData[empId] || {};
+  return Object.values(empData).filter(r => MEAL_ELIGIBLE.includes(r.status)).length;
+}
+
+Object.assign(window, {
+  TODAY_DATE, CURRENT_MONTH,
+  STATUS_CONFIG, MEAL_ELIGIBLE,
+  INITIAL_EMPLOYEES, getDaysInMonth,
+  INITIAL_ATTENDANCE, INITIAL_SETTINGS,
+  getInitials, formatRupiah, getAvatarColor, calcMealEligibleDays,
+});
+
+  </script>
+
+  <!-- components.jsx -->
+  <script type="text/babel">
+// ============================================================
+// components.jsx — Shared UI Components
+// ============================================================
+
+// ── Icons ────────────────────────────────────────────────────
+const Icons = {
+  Dashboard: () => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+      <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+    </svg>
+  ),
+  Calendar: () => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/>
+      <line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+    </svg>
+  ),
+  Money: () => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="6" width="20" height="13" rx="2"/>
+      <circle cx="12" cy="12" r="3"/>
+      <path d="M17 6V5a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v1"/>
+    </svg>
+  ),
+  Users: () => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+      <circle cx="9" cy="7" r="4"/>
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+      <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+    </svg>
+  ),
+  Settings: () => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="3"/>
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+    </svg>
+  ),
+  Plus: () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+    </svg>
+  ),
+  Download: () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+      <polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+    </svg>
+  ),
+  ChevronLeft: () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+      <polyline points="15 18 9 12 15 6"/>
+    </svg>
+  ),
+  ChevronRight: () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+      <polyline points="9 18 15 12 9 6"/>
+    </svg>
+  ),
+  Edit: () => (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+    </svg>
+  ),
+  Trash: () => (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <polyline points="3 6 5 6 21 6"/>
+      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+      <path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
+    </svg>
+  ),
+  X: () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+      <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+    </svg>
+  ),
+  Check: () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+      <polyline points="20 6 9 17 4 12"/>
+    </svg>
+  ),
+  AlertCircle: () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <circle cx="12" cy="12" r="10"/>
+      <line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+    </svg>
+  ),
+  TrendUp: () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+      <polyline points="17 6 23 6 23 12"/>
+    </svg>
+  ),
+  User: () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+      <circle cx="12" cy="7" r="4"/>
+    </svg>
+  ),
+  Clock: () => (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <circle cx="12" cy="12" r="10"/>
+      <polyline points="12 6 12 12 16 14"/>
+    </svg>
+  ),
+};
+
+// ── StatusBadge ───────────────────────────────────────────────
+function StatusBadge({ status, size = 'sm' }) {
+  const cfg = STATUS_CONFIG[status];
+  if (!cfg) return null;
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center',
+      padding: size === 'sm' ? '2px 8px' : '4px 12px',
+      borderRadius: 6,
+      fontSize: size === 'sm' ? 12 : 13,
+      fontWeight: cfg.bold ? 700 : 500,
+      color: cfg.color,
+      background: cfg.bg,
+      border: `1px solid ${cfg.color}30`,
+      whiteSpace: 'nowrap', lineHeight: 1.5,
+      letterSpacing: '-0.01em',
+    }}>
+      {cfg.label}
+    </span>
+  );
+}
+
+// ── Avatar ────────────────────────────────────────────────────
+function Avatar({ name, size = 36, id = 1 }) {
+  const color = getAvatarColor(id);
+  const initials = getInitials(name);
+  return (
+    <div style={{
+      width: size, height: size, borderRadius: '50%',
+      background: color + '18', color,
+      fontWeight: 700, fontSize: Math.floor(size * 0.36),
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      flexShrink: 0, border: `2px solid ${color}30`,
+      letterSpacing: '0.02em',
+    }}>
+      {initials}
+    </div>
+  );
+}
+
+// ── Toast ─────────────────────────────────────────────────────
+function Toast({ message, type = 'success', onClose }) {
+  React.useEffect(() => {
+    const t = setTimeout(onClose, type === 'success' ? 3000 : 5000);
+    return () => clearTimeout(t);
+  }, []);
+  const bg = type === 'success' ? '#10B981' : '#EF4444';
+  return (
+    <div style={{
+      position: 'fixed', bottom: 24, right: 24, zIndex: 9999,
+      background: bg, color: 'white',
+      padding: '12px 16px', borderRadius: 10,
+      boxShadow: '0 4px 16px rgba(0,0,0,0.18)',
+      display: 'flex', alignItems: 'center', gap: 10,
+      fontSize: 14, fontWeight: 500, maxWidth: 340,
+      animation: 'slideUp 0.2s ease',
+    }}>
+      {type === 'success' ? <Icons.Check /> : <Icons.AlertCircle />}
+      <span style={{ flex: 1 }}>{message}</span>
+      <button onClick={onClose} style={{
+        background: 'rgba(255,255,255,0.25)', border: 'none', color: 'white',
+        cursor: 'pointer', borderRadius: 6, padding: '3px 6px', display: 'flex', alignItems: 'center',
+      }}>
+        <Icons.X />
+      </button>
+    </div>
+  );
+}
+
+// ── Modal ─────────────────────────────────────────────────────
+function Modal({ isOpen, onClose, title, children, footer, width = 480 }) {
+  React.useEffect(() => {
+    const handler = (e) => { if (e.key === 'Escape') onClose(); };
+    if (isOpen) document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [isOpen]);
+  if (!isOpen) return null;
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 2000,
+      background: 'rgba(15,23,42,0.4)', backdropFilter: 'blur(4px)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
+      animation: 'fadeIn 0.15s ease',
+    }} onClick={e => e.target === e.currentTarget && onClose()}>
+      <div style={{
+        background: 'white', borderRadius: 16, width: '100%', maxWidth: width,
+        boxShadow: '0 20px 60px rgba(0,0,0,0.22)',
+        maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column',
+        animation: 'slideUp 0.2s ease',
+      }}>
+        <div style={{
+          padding: '18px 24px', borderBottom: '1px solid #E2E8F0',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          flexShrink: 0,
+        }}>
+          <h2 style={{ margin: 0, fontSize: 17, fontWeight: 600, color: '#0F172A' }}>{title}</h2>
+          <button onClick={onClose} style={{
+            background: '#F1F5F9', border: 'none', borderRadius: 8,
+            padding: 7, cursor: 'pointer', display: 'flex', alignItems: 'center', color: '#64748B',
+          }}>
+            <Icons.X />
+          </button>
+        </div>
+        <div style={{ padding: '20px 24px', overflowY: 'auto', flex: 1 }}>{children}</div>
+        {footer && (
+          <div style={{ padding: '14px 24px', borderTop: '1px solid #E2E8F0', background: '#F8FAFC', flexShrink: 0 }}>
+            {footer}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── ConfirmDialog ─────────────────────────────────────────────
+function ConfirmDialog({ isOpen, onClose, onConfirm, title, message, confirmLabel = 'Hapus', isDanger = true }) {
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title={title} width={380}
+      footer={
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+          <button onClick={onClose} style={sharedStyles.btnSecondary}>Batal</button>
+          <button onClick={() => { onConfirm(); onClose(); }}
+            style={{ ...sharedStyles.btnPrimary, background: isDanger ? '#EF4444' : 'var(--color-primary)' }}>
+            {confirmLabel}
+          </button>
+        </div>
+      }>
+      <p style={{ margin: 0, color: '#475569', lineHeight: 1.65, fontSize: 14 }}>{message}</p>
+    </Modal>
+  );
+}
+
+// ── FormInput ─────────────────────────────────────────────────
+function FormInput({ label, error, ...props }) {
+  const [focused, setFocused] = React.useState(false);
+  return (
+    <div style={{ marginBottom: 14 }}>
+      {label && <label style={sharedStyles.label}>{label}</label>}
+      <input
+        {...props}
+        style={{
+          ...sharedStyles.input,
+          borderColor: error ? '#EF4444' : focused ? 'var(--color-primary)' : '#E2E8F0',
+          boxShadow: focused ? '0 0 0 3px var(--color-primary-light)' : 'none',
+          background: error ? '#FEF2F2' : 'white',
+          transition: 'all 0.15s',
+        }}
+        onFocus={e => { setFocused(true); props.onFocus && props.onFocus(e); }}
+        onBlur={e => { setFocused(false); props.onBlur && props.onBlur(e); }}
+      />
+      {error && <p style={{ margin: '4px 0 0', fontSize: 12, color: '#EF4444' }}>{error}</p>}
+    </div>
+  );
+}
+
+// ── FormSelect ────────────────────────────────────────────────
+function FormSelect({ label, children, ...props }) {
+  return (
+    <div style={{ marginBottom: 14 }}>
+      {label && <label style={sharedStyles.label}>{label}</label>}
+      <select {...props} style={{ ...sharedStyles.input, cursor: 'pointer', appearance: 'none',
+        backgroundImage: `url("data:image/svg+xml,%3Csvg width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`,
+        backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center',
+        paddingRight: 32,
+      }}>
+        {children}
+      </select>
+    </div>
+  );
+}
+
+// ── PageHeader ────────────────────────────────────────────────
+function PageHeader({ title, subtitle, actions }) {
+  return (
+    <div style={{
+      padding: '20px 28px', background: 'white',
+      borderBottom: '1px solid #E2E8F0',
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      flexShrink: 0, gap: 16,
+    }}>
+      <div>
+        <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: '#0F172A', lineHeight: 1.3 }}>{title}</h1>
+        {subtitle && <p style={{ margin: '2px 0 0', fontSize: 13, color: '#64748B' }}>{subtitle}</p>}
+      </div>
+      {actions && <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>{actions}</div>}
+    </div>
+  );
+}
+
+// ── MonthNav ──────────────────────────────────────────────────
+function MonthNav({ label }) {
+  const MONTH_NAMES = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 2,
+      background: '#F8FAFC', border: '1px solid #E2E8F0',
+      borderRadius: 8, padding: '0 4px',
+    }}>
+      <button style={sharedStyles.iconBtn} title="Bulan sebelumnya"><Icons.ChevronLeft /></button>
+      <span style={{ fontSize: 14, fontWeight: 600, color: '#0F172A', padding: '6px 8px', minWidth: 120, textAlign: 'center' }}>
+        {label || 'Mei 2026'}
+      </span>
+      <button style={{ ...sharedStyles.iconBtn, opacity: 0.35, cursor: 'not-allowed' }} title="Bulan ini sudah terbaru"><Icons.ChevronRight /></button>
+    </div>
+  );
+}
+
+// ── SummaryCard ───────────────────────────────────────────────
+function SummaryCard({ label, value, sub, icon, color }) {
+  return (
+    <div style={{
+      background: 'white', borderRadius: 14, padding: '20px 22px',
+      border: '1px solid #E2E8F0', boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+      display: 'flex', alignItems: 'flex-start', gap: 14, flex: 1, minWidth: 0,
+    }}>
+      <div style={{
+        width: 44, height: 44, borderRadius: 12,
+        background: color + '15', color,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        flexShrink: 0,
+      }}>
+        {icon}
+      </div>
+      <div style={{ minWidth: 0 }}>
+        <p style={{ margin: 0, fontSize: 12, fontWeight: 500, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</p>
+        <p style={{ margin: '4px 0 2px', fontSize: 26, fontWeight: 700, color: '#0F172A', lineHeight: 1.1 }}>{value}</p>
+        {sub && <p style={{ margin: 0, fontSize: 12, color: '#94A3B8' }}>{sub}</p>}
+      </div>
+    </div>
+  );
+}
+
+// ── Shared Styles ─────────────────────────────────────────────
+const sharedStyles = {
+  btnPrimary: {
+    background: 'var(--color-primary)', color: 'white', border: 'none',
+    padding: '8px 16px', borderRadius: 8, cursor: 'pointer',
+    fontSize: 13, fontWeight: 500, display: 'inline-flex', alignItems: 'center', gap: 6,
+    transition: 'opacity 0.15s',
+  },
+  btnSecondary: {
+    background: 'white', color: '#475569', border: '1px solid #E2E8F0',
+    padding: '8px 16px', borderRadius: 8, cursor: 'pointer',
+    fontSize: 13, fontWeight: 500, display: 'inline-flex', alignItems: 'center', gap: 6,
+    transition: 'background 0.15s',
+  },
+  input: {
+    width: '100%', padding: '8px 12px', border: '1px solid #E2E8F0',
+    borderRadius: 6, fontSize: 14, color: '#0F172A', background: 'white',
+    outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit',
+  },
+  label: {
+    display: 'block', fontSize: 13, fontWeight: 500, color: '#475569', marginBottom: 5,
+  },
+  iconBtn: {
+    background: 'none', border: 'none', cursor: 'pointer',
+    padding: '6px', borderRadius: 6, display: 'flex', alignItems: 'center',
+    color: '#64748B', transition: 'background 0.1s',
+  },
+};
+
+Object.assign(window, {
+  Icons, StatusBadge, Avatar, Toast, Modal, ConfirmDialog,
+  FormInput, FormSelect, PageHeader, MonthNav, SummaryCard, sharedStyles,
+});
+
+  </script>
+
+  <!-- layout.jsx -->
+  <script type="text/babel">
+// ============================================================
+// layout.jsx — Sidebar Navigation
+// ============================================================
+
+const NAV_ITEMS = [
+  { id: 'dashboard',   label: 'Dashboard',   Icon: () => <Icons.Dashboard /> },
+  { id: 'absensi',     label: 'Absensi',      Icon: () => <Icons.Calendar /> },
+  { id: 'uang-makan',  label: 'Uang Makan',   Icon: () => <Icons.Money /> },
+  { id: 'karyawan',    label: 'Karyawan',     Icon: () => <Icons.Users /> },
+  { id: 'pengaturan',  label: 'Pengaturan',   Icon: () => <Icons.Settings /> },
+];
+
+function Sidebar({ activePage, onNavigate }) {
+  return (
+    <aside style={{
+      width: 240, flexShrink: 0, height: '100vh',
+      background: 'white', borderRight: '1px solid #E2E8F0',
+      display: 'flex', flexDirection: 'column', overflow: 'hidden',
+    }}>
+      {/* Logo */}
+      <div style={{
+        padding: '18px 20px 16px', borderBottom: '1px solid #F1F5F9',
+        display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0,
+      }}>
+        <div style={{
+          width: 36, height: 36, borderRadius: 10,
+          background: 'var(--color-primary)', color: 'white',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 13, fontWeight: 800, letterSpacing: '-0.02em', flexShrink: 0,
+        }}>
+          S&amp;P
+        </div>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            Simbolon &amp; Partners
+          </div>
+          <div style={{ fontSize: 11, color: '#94A3B8', marginTop: 1 }}>HR Admin Tool</div>
+        </div>
+      </div>
+
+      {/* Nav */}
+      <nav style={{ flex: 1, padding: '10px 12px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 2 }}>
+        {NAV_ITEMS.map(({ id, label, Icon }) => {
+          const isActive = activePage === id;
+          return (
+            <button
+              key={id}
+              onClick={() => onNavigate(id)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 10,
+                padding: '9px 12px', borderRadius: 9, border: 'none',
+                background: isActive ? 'var(--color-primary)' : 'transparent',
+                color: isActive ? 'white' : '#475569',
+                cursor: 'pointer', fontSize: 13, fontWeight: isActive ? 600 : 400,
+                textAlign: 'left', width: '100%', transition: 'all 0.12s',
+              }}
+              onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = '#F8FAFC'; }}
+              onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = 'transparent'; }}
+            >
+              <span style={{ opacity: isActive ? 1 : 0.7, display: 'flex', alignItems: 'center' }}>
+                <Icon />
+              </span>
+              {label}
+            </button>
+          );
+        })}
+      </nav>
+
+      {/* User info */}
+      <div style={{
+        padding: '14px 16px', borderTop: '1px solid #F1F5F9',
+        display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0,
+      }}>
+        <div style={{
+          width: 34, height: 34, borderRadius: '50%',
+          background: 'var(--color-primary)', color: 'white',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 12, fontWeight: 700, flexShrink: 0,
+        }}>
+          AD
+        </div>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: '#0F172A' }}>Admin</div>
+          <div style={{ fontSize: 11, color: '#94A3B8' }}>Administrator</div>
+        </div>
+      </div>
+    </aside>
+  );
+}
+
+Object.assign(window, { Sidebar });
+
+  </script>
+
+  <!-- page-dashboard.jsx -->
+  <script type="text/babel">
+// ============================================================
+// page-dashboard.jsx — Dashboard
+// ============================================================
+
+function DashboardPage({ attendanceData, employees }) {
+  const ctx = React.useContext(AppContext);
+  const empList = ctx ? ctx.employees : employees || INITIAL_EMPLOYEES;
+  const attData = ctx ? ctx.attendanceData : attendanceData || INITIAL_ATTENDANCE;
+
+  const activeEmployees = empList.filter(e => e.active);
+
+  // Last working day data (May 22)
+  const lastWorkDay = 22;
+  const todayStatus = empList.map(emp => {
+    const rec = (attData[emp.id] || {})[lastWorkDay];
+    return { emp, rec };
+  });
+
+  const hadirCount = todayStatus.filter(({ rec }) => rec && ['hadir', 'terlambat', 'wfh', 'dinas_luar'].includes(rec.status)).length;
+
+  // Monthly meal total
+  const totalMakan = empList.reduce((sum, emp) => {
+    const eligible = calcMealEligibleDays(emp.id, attData);
+    return sum + eligible * emp.tarif;
+  }, 0);
+
+  // Today's attendance for the quick table
+  const days = getDaysInMonth(2026, 4);
+  const lastDay = days.find(d => d.day === lastWorkDay);
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      <PageHeader
+        title="Dashboard"
+        subtitle={`Jumat, 22 Mei 2026 — Simbolon & Partners`}
+      />
+
+      <div style={{ flex: 1, overflowY: 'auto', padding: 24 }}>
+
+        {/* Summary Cards */}
+        <div style={{ display: 'flex', gap: 16, marginBottom: 24 }}>
+          <SummaryCard
+            label="Hadir Jum'at Kemarin"
+            value={`${hadirCount}/${activeEmployees.length}`}
+            sub="22 Mei 2026 (hari kerja terakhir)"
+            icon={<Icons.Users />}
+            color="#4F46E5"
+          />
+          <SummaryCard
+            label="Karyawan Aktif"
+            value={activeEmployees.length}
+            sub={`dari ${empList.length} total karyawan`}
+            icon={<Icons.User />}
+            color="#10B981"
+          />
+          <SummaryCard
+            label="Uang Makan Bulan Ini"
+            value={formatRupiah(totalMakan)}
+            sub="Estimasi s/d Mei 2026"
+            icon={<Icons.Money />}
+            color="#F59E0B"
+          />
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 20, alignItems: 'start' }}>
+
+          {/* Attendance quick view */}
+          <div style={{ background: 'white', borderRadius: 14, border: '1px solid #E2E8F0', overflow: 'hidden' }}>
+            <div style={{
+              padding: '16px 20px', borderBottom: '1px solid #F1F5F9',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: 15, fontWeight: 600, color: '#0F172A' }}>Absensi Jum&apos;at, 22 Mei 2026</h3>
+                <p style={{ margin: '2px 0 0', fontSize: 12, color: '#94A3B8' }}>Hari kerja terakhir</p>
+              </div>
+              <button
+                onClick={() => ctx && ctx.setActivePage('absensi')}
+                style={{ ...sharedStyles.btnSecondary, fontSize: 12, padding: '6px 12px' }}
+              >
+                Lihat Semua
+              </button>
+            </div>
+            <div>
+              {todayStatus.map(({ emp, rec }, i) => (
+                <div key={emp.id} style={{
+                  display: 'flex', alignItems: 'center', gap: 12, padding: '12px 20px',
+                  background: i % 2 === 0 ? 'white' : '#FAFAFA',
+                  borderBottom: i < todayStatus.length - 1 ? '1px solid #F1F5F9' : 'none',
+                }}>
+                  <Avatar name={emp.name} id={emp.id} size={34} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: '#0F172A' }}>{emp.name}</div>
+                    <div style={{ fontSize: 11, color: '#94A3B8' }}>{emp.role}</div>
+                  </div>
+                  {rec ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3 }}>
+                      <StatusBadge status={rec.status} />
+                      {rec.timeIn && (
+                        <span style={{ fontSize: 11, color: '#94A3B8', display: 'flex', alignItems: 'center', gap: 3 }}>
+                          <Icons.Clock /> {rec.timeIn} – {rec.timeOut}
+                        </span>
+                      )}
+                    </div>
+                  ) : (
+                    <span style={{ fontSize: 12, color: '#CBD5E1' }}>Belum diinput</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Status distribution */}
+          <div style={{ background: 'white', borderRadius: 14, border: '1px solid #E2E8F0', overflow: 'hidden' }}>
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid #F1F5F9' }}>
+              <h3 style={{ margin: 0, fontSize: 15, fontWeight: 600, color: '#0F172A' }}>Rekap Status Bulan Ini</h3>
+              <p style={{ margin: '2px 0 0', fontSize: 12, color: '#94A3B8' }}>Mei 2026</p>
+            </div>
+            <div style={{ padding: '12px 20px' }}>
+              {Object.entries(STATUS_CONFIG).map(([key, cfg]) => {
+                let count = 0;
+                empList.forEach(emp => {
+                  const empData = attData[emp.id] || {};
+                  count += Object.values(empData).filter(r => r.status === key).length;
+                });
+                if (count === 0) return null;
+                const total = empList.reduce((s, emp) => s + Object.keys(attData[emp.id] || {}).length, 0);
+                const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+                return (
+                  <div key={key} style={{ marginBottom: 10 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                      <span style={{ fontSize: 12, fontWeight: 500, color: cfg.color }}>{cfg.label}</span>
+                      <span style={{ fontSize: 12, color: '#64748B', fontWeight: 600 }}>{count}</span>
+                    </div>
+                    <div style={{ height: 5, background: '#F1F5F9', borderRadius: 3, overflow: 'hidden' }}>
+                      <div style={{ height: '100%', width: `${pct}%`, background: cfg.color, borderRadius: 3, transition: 'width 0.6s ease' }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+Object.assign(window, { DashboardPage });
+
+  </script>
+
+  <!-- page-absensi.jsx -->
+  <script type="text/babel">
+// ============================================================
+// page-absensi.jsx — Attendance Table + Inline Edit (core feature)
+// ============================================================
+
+// ── Attendance Popover ────────────────────────────────────────
+function AttendancePopover({ popover, onSave, onClose }) {
+  const [status, setStatus] = React.useState(popover.currentData?.status || '');
+  const [timeIn, setTimeIn] = React.useState(popover.currentData?.timeIn || '');
+  const [timeOut, setTimeOut] = React.useState(popover.currentData?.timeOut || '');
+
+  const needsTime = ['hadir', 'terlambat', 'sidang', 'pendampingan', 'dinas_luar'].includes(status);
+
+  // Click-outside close
+  React.useEffect(() => {
+    const h = (e) => { if (!e.target.closest('[data-popover="attendance"]')) onClose(); };
+    setTimeout(() => document.addEventListener('mousedown', h), 10);
+    return () => document.removeEventListener('mousedown', h);
+  }, []);
+
+  // Escape key
+  React.useEffect(() => {
+    const h = (e) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', h);
+    return () => document.removeEventListener('keydown', h);
+  }, []);
+
+  // Smart position: appear below/above cell, flip if near edge
+  const W = 296;
+  const H = needsTime ? 370 : 290;
+  const vW = window.innerWidth;
+  const vH = window.innerHeight;
+  let top = popover.rect.bottom + 6;
+  let left = popover.rect.left;
+  if (top + H > vH - 12) top = popover.rect.top - H - 6;
+  if (left + W > vW - 12) left = vW - W - 12;
+  if (left < 12) left = 12;
+  if (top < 12) top = 12;
+
+  const handleSave = () => {
+    if (!status) return;
+    onSave({ status, timeIn: needsTime ? timeIn : '', timeOut: needsTime ? timeOut : '' });
+  };
+
+  const MONTH_NAMES = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+
+  return (
+    <div data-popover="attendance" style={{
+      position: 'fixed', top, left, zIndex: 3000, width: W,
+      background: 'white', borderRadius: 13,
+      boxShadow: '0 8px 30px rgba(0,0,0,0.16), 0 2px 8px rgba(0,0,0,0.08)',
+      border: '1px solid #E2E8F0',
+    }}>
+      {/* Header */}
+      <div style={{
+        padding: '12px 16px 10px', borderBottom: '1px solid #F1F5F9',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      }}>
+        <div>
+          <div style={{ fontSize: 13, fontWeight: 600, color: '#0F172A' }}>
+            {popover.dayInfo.dayName}, {popover.day} {MONTH_NAMES[4]} 2026
+          </div>
+          <div style={{ fontSize: 12, color: '#64748B', marginTop: 1 }}>{popover.empName}</div>
+        </div>
+        <button onClick={onClose} style={{
+          background: '#F1F5F9', border: 'none', borderRadius: 6,
+          padding: 5, cursor: 'pointer', display: 'flex', color: '#64748B',
+        }}>
+          <Icons.X />
+        </button>
+      </div>
+
+      <div style={{ padding: '12px 16px' }}>
+        {/* Status grid */}
+        <p style={{ margin: '0 0 8px', fontSize: 11, fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Status</p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 5, marginBottom: 14 }}>
+          {Object.entries(STATUS_CONFIG).map(([key, cfg]) => {
+            const isSelected = status === key;
+            return (
+              <button key={key} onClick={() => setStatus(key)} style={{
+                padding: '6px 10px', borderRadius: 7, cursor: 'pointer', textAlign: 'left',
+                border: `1.5px solid ${isSelected ? cfg.color : '#E2E8F0'}`,
+                background: isSelected ? cfg.bg : 'white',
+                color: cfg.color, fontWeight: cfg.bold ? 700 : (isSelected ? 600 : 400),
+                fontSize: 12, transition: 'all 0.1s',
+              }}>
+                {cfg.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Time inputs */}
+        {needsTime && (
+          <div style={{ marginBottom: 14 }}>
+            <p style={{ margin: '0 0 8px', fontSize: 11, fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Jam Kerja</p>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <div style={{ flex: 1 }}>
+                <label style={{ fontSize: 11, color: '#64748B', marginBottom: 3, display: 'block' }}>Masuk</label>
+                <input type="time" value={timeIn} onChange={e => setTimeIn(e.target.value)}
+                  style={{
+                    width: '100%', padding: '7px 10px', border: '1px solid #E2E8F0',
+                    borderRadius: 6, fontSize: 13, boxSizing: 'border-box',
+                    fontFamily: 'inherit', outline: 'none', color: '#0F172A',
+                  }} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <label style={{ fontSize: 11, color: '#64748B', marginBottom: 3, display: 'block' }}>Keluar</label>
+                <input type="time" value={timeOut} onChange={e => setTimeOut(e.target.value)}
+                  style={{
+                    width: '100%', padding: '7px 10px', border: '1px solid #E2E8F0',
+                    borderRadius: 6, fontSize: 13, boxSizing: 'border-box',
+                    fontFamily: 'inherit', outline: 'none', color: '#0F172A',
+                  }} />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Actions */}
+        <div style={{ display: 'flex', gap: 7, justifyContent: 'flex-end' }}>
+          <button onClick={onClose} style={{ ...sharedStyles.btnSecondary, padding: '7px 14px', fontSize: 13 }}>
+            Batal
+          </button>
+          <button onClick={handleSave} disabled={!status} style={{
+            ...sharedStyles.btnPrimary,
+            padding: '7px 14px', fontSize: 13,
+            opacity: status ? 1 : 0.45,
+            cursor: status ? 'pointer' : 'not-allowed',
+          }}>
+            Simpan
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Attendance Cell ───────────────────────────────────────────
+function AttendanceCell({ empId, empName, day, dayInfo, data, onEdit }) {
+  const isFuture = !dayInfo.isPast && !dayInfo.isToday;
+  const isEditable = !isFuture;
+  const cfg = data ? STATUS_CONFIG[data.status] : null;
+  const [hovered, setHovered] = React.useState(false);
+
+  return (
+    <td
+      onClick={isEditable ? (e) => onEdit(e, empId, empName, day, dayInfo, data) : undefined}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        padding: '7px 10px', border: '1px solid #F1F5F9',
+        cursor: isEditable ? 'pointer' : 'default',
+        minWidth: 140, maxWidth: 180,
+        background: hovered && isEditable ? '#F8FAFC' : 'white',
+        transition: 'background 0.1s',
+        verticalAlign: 'middle', position: 'relative',
+      }}
+    >
+      {data ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          <StatusBadge status={data.status} size="sm" />
+          {(data.timeIn || data.timeOut) && (
+            <span style={{ fontSize: 11, color: '#94A3B8', display: 'flex', alignItems: 'center', gap: 3 }}>
+              <Icons.Clock />
+              {data.timeIn || '--:--'} – {data.timeOut || '--:--'}
+            </span>
+          )}
+        </div>
+      ) : isFuture ? (
+        <span style={{ color: '#E2E8F0', fontSize: 12, userSelect: 'none' }}>—</span>
+      ) : (
+        <span style={{
+          fontSize: 12, color: hovered ? 'var(--color-primary)' : '#CBD5E1',
+          fontWeight: hovered ? 500 : 400, transition: 'color 0.1s',
+        }}>
+          + Input
+        </span>
+      )}
+
+      {/* Edit indicator on hover */}
+      {data && isEditable && hovered && (
+        <div style={{
+          position: 'absolute', top: 5, right: 5, color: '#94A3B8', lineHeight: 0,
+        }}>
+          <Icons.Edit />
+        </div>
+      )}
+    </td>
+  );
+}
+
+// ── Absensi Page ──────────────────────────────────────────────
+function AbsensiPage() {
+  const ctx = React.useContext(AppContext);
+  const attendanceData = ctx ? ctx.attendanceData : INITIAL_ATTENDANCE;
+  const employees = ctx ? ctx.employees : INITIAL_EMPLOYEES;
+  const updateAttendance = ctx ? ctx.updateAttendance : () => {};
+  const showToast = ctx ? ctx.showToast : () => {};
+
+  const days = getDaysInMonth(2026, 4);
+  const activeEmployees = employees.filter(e => e.active);
+
+  // Working days (past + today, non-holiday) for the WFH date picker
+  const workingDays = days.filter(d => !d.isWeekend && !d.isHoliday && (d.isPast || d.isToday));
+
+  const [popover, setPopover] = React.useState(null);
+  const [exportLoading, setExportLoading] = React.useState(false);
+  // WFH bulk state
+  const [wfhDay, setWfhDay] = React.useState(22); // default: last working day
+  const [confirmWfhAll, setConfirmWfhAll] = React.useState(false);
+  const [selectMode, setSelectMode] = React.useState(false);
+  const [selectedEmpIds, setSelectedEmpIds] = React.useState(new Set());
+
+  const handleCellEdit = (e, empId, empName, day, dayInfo, currentData) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setPopover({ empId, empName, day, dayInfo, currentData, rect });
+  };
+
+  const handleSave = ({ status, timeIn, timeOut }) => {
+    if (!popover) return;
+    updateAttendance(popover.empId, popover.day, { status, timeIn, timeOut });
+    setPopover(null);
+  };
+
+  const handleExport = () => {
+    setExportLoading(true);
+    setTimeout(() => { setExportLoading(false); showToast('File rekap absensi berhasil diunduh'); }, 1800);
+  };
+
+  // WFH: employees with no data on wfhDay
+  const empsWithoutData = activeEmployees.filter(emp => !(attendanceData[emp.id] || {})[wfhDay]);
+
+  const doSetWfhAll = () => {
+    empsWithoutData.forEach(emp => updateAttendance(emp.id, wfhDay, { status: 'wfh', timeIn: '', timeOut: '' }));
+    setConfirmWfhAll(false);
+    showToast(`WFH diset untuk ${empsWithoutData.length} karyawan pada ${wfhDay} Mei 2026`);
+  };
+
+  const doSetWfhSelected = () => {
+    const ids = [...selectedEmpIds];
+    ids.forEach(id => updateAttendance(id, wfhDay, { status: 'wfh', timeIn: '', timeOut: '' }));
+    showToast(`WFH diset untuk ${ids.length} karyawan pada ${wfhDay} Mei 2026`);
+    setSelectMode(false);
+    setSelectedEmpIds(new Set());
+  };
+
+  const toggleEmpSelect = (empId) => {
+    setSelectedEmpIds(prev => {
+      const next = new Set(prev);
+      if (next.has(empId)) next.delete(empId); else next.add(empId);
+      return next;
+    });
+  };
+
+  const exitSelectMode = () => { setSelectMode(false); setSelectedEmpIds(new Set()); };
+
+  const getSummary = (empId) => {
+    const empData = attendanceData[empId] || {};
+    const counts = {};
+    Object.values(empData).forEach(r => { counts[r.status] = (counts[r.status] || 0) + 1; });
+    return counts;
+  };
+
+  // Find dayInfo for selected wfhDay
+  const wfhDayInfo = days.find(d => d.day === wfhDay);
+  const wfhDayLabel = wfhDayInfo ? `${wfhDayInfo.dayName}, ${wfhDay} Mei 2026` : `${wfhDay} Mei 2026`;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative' }}>
+      <PageHeader
+        title="Rekap Absensi"
+        subtitle="Mei 2026 — Data hingga hari ini"
+        actions={
+          <>
+            <MonthNav label="Mei 2026" />
+            <button onClick={handleExport} style={sharedStyles.btnPrimary} disabled={exportLoading}>
+              <Icons.Download />
+              {exportLoading ? 'Mengunduh...' : 'Export Excel'}
+            </button>
+          </>
+        }
+      />
+
+      {/* Legend */}
+      <div style={{
+        padding: '7px 20px', borderBottom: '1px solid #F1F5F9', background: '#FAFAFA',
+        display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center',
+      }}>
+        <span style={{ fontSize: 11, color: '#94A3B8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Status:</span>
+        {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
+          <span key={key} style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 11, color: cfg.color, fontWeight: cfg.bold ? 700 : 500 }}>
+            <span style={{ width: 7, height: 7, borderRadius: '50%', background: cfg.color, display: 'inline-block' }} />
+            {cfg.label}
+          </span>
+        ))}
+        <span style={{ marginLeft: 'auto', fontSize: 11, color: '#94A3B8' }}>Klik sel untuk input/edit</span>
+      </div>
+
+      {/* WFH Action Bar */}
+      <div style={{
+        padding: '9px 20px', borderBottom: '1px solid #BAE6FD',
+        background: selectMode ? '#FEF3C7' : '#F0F9FF',
+        display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
+        transition: 'background 0.2s',
+      }}>
+        <span style={{ fontSize: 12, fontWeight: 600, color: selectMode ? '#92400E' : '#0369A1', flexShrink: 0 }}>
+          {selectMode ? 'Mode Pilih WFH:' : 'Input WFH Cepat:'}
+        </span>
+
+        {/* Date selector */}
+        <select
+          value={wfhDay}
+          onChange={e => setWfhDay(Number(e.target.value))}
+          style={{
+            fontSize: 12, padding: '4px 10px', border: '1px solid #BAE6FD',
+            borderRadius: 6, background: 'white', color: '#0F172A',
+            fontFamily: 'inherit', cursor: 'pointer', fontWeight: 500,
+          }}
+        >
+          {workingDays.map(d => (
+            <option key={d.day} value={d.day}>{d.dayName}, {d.day} Mei 2026</option>
+          ))}
+        </select>
+
+        {!selectMode && (
+          <>
+            <button
+              onClick={() => setConfirmWfhAll(true)}
+              style={{
+                fontSize: 12, padding: '5px 12px', borderRadius: 7, border: 'none',
+                background: '#0EA5E9', color: 'white', cursor: 'pointer', fontWeight: 500,
+                display: 'flex', alignItems: 'center', gap: 5,
+                opacity: empsWithoutData.length === 0 ? 0.5 : 1,
+              }}
+              disabled={empsWithoutData.length === 0}
+            >
+              Set WFH Semua
+              <span style={{ background: 'rgba(255,255,255,0.25)', borderRadius: 10, padding: '0 5px', fontSize: 11, fontWeight: 700 }}>
+                {empsWithoutData.length}
+              </span>
+            </button>
+            <button
+              onClick={() => { setSelectMode(true); setSelectedEmpIds(new Set()); }}
+              style={{
+                fontSize: 12, padding: '5px 12px', borderRadius: 7,
+                border: '1px solid #BAE6FD', background: 'white',
+                color: '#0369A1', cursor: 'pointer', fontWeight: 500,
+              }}
+            >
+              Set WFH Sebagian
+            </button>
+          </>
+        )}
+
+        {selectMode && (
+          <span style={{ fontSize: 12, color: '#92400E' }}>
+            Centang karyawan di header kolom tabel
+          </span>
+        )}
+
+        {selectMode && (
+          <button onClick={exitSelectMode} style={{
+            fontSize: 12, padding: '5px 12px', borderRadius: 7,
+            border: '1px solid #FCD34D', background: 'white',
+            color: '#92400E', cursor: 'pointer', fontWeight: 500, marginLeft: 'auto',
+          }}>
+            Batal
+          </button>
+        )}
+      </div>
+
+      {/* Table */}
+      <div style={{ flex: 1, overflow: 'auto' }}>
+        <table style={{ borderCollapse: 'collapse', fontSize: 13, width: 'max-content', minWidth: '100%' }}>
+          {/* Sticky Header */}
+          <thead>
+            <tr style={{ position: 'sticky', top: 0, zIndex: 20 }}>
+              <th style={{
+                position: 'sticky', left: 0, zIndex: 30,
+                background: '#0F172A', color: 'white',
+                padding: '10px 16px', textAlign: 'left', fontWeight: 600, fontSize: 12,
+                minWidth: 110, letterSpacing: '0.02em', borderRight: '2px solid #1E293B',
+              }}>
+                Tanggal
+              </th>
+              {activeEmployees.map(emp => (
+                <th key={emp.id} style={{
+                  background: selectMode && selectedEmpIds.has(emp.id) ? '#1E3A5F' : '#0F172A',
+                  color: 'white', padding: '10px 14px', textAlign: 'left',
+                  fontWeight: 500, fontSize: 12, minWidth: 150, whiteSpace: 'nowrap',
+                  borderRight: '1px solid #1E293B', cursor: selectMode ? 'pointer' : 'default',
+                  transition: 'background 0.15s',
+                }} onClick={selectMode ? () => toggleEmpSelect(emp.id) : undefined}>
+                  {selectMode && (
+                    <div style={{ marginBottom: 4 }}>
+                      <input
+                        type="checkbox"
+                        checked={selectedEmpIds.has(emp.id)}
+                        onChange={() => toggleEmpSelect(emp.id)}
+                        onClick={e => e.stopPropagation()}
+                        style={{ width: 14, height: 14, cursor: 'pointer', accentColor: '#0EA5E9' }}
+                      />
+                    </div>
+                  )}
+                  <div style={{ fontWeight: 600 }}>{emp.name}</div>
+                  <div style={{ fontSize: 10, color: '#94A3B8', fontWeight: 400, marginTop: 1 }}>{emp.role}</div>
+                </th>
+              ))}
+            </tr>
+          </thead>
+
+          <tbody>
+            {days.map(dayInfo => {
+              const { day, dayName, isWeekend, isHoliday, holidayName, isPast, isToday } = dayInfo;
+
+              if (isWeekend) return (
+                <tr key={day} style={{ background: '#F8FAFC' }}>
+                  <td style={{ position: 'sticky', left: 0, zIndex: 10, padding: '7px 16px', borderRight: '2px solid #E2E8F0', background: '#F8FAFC' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontSize: 15, fontWeight: 700, color: '#CBD5E1', minWidth: 22 }}>{day}</span>
+                      <span style={{ fontSize: 11, color: '#CBD5E1', fontWeight: 500 }}>{dayName}</span>
+                    </div>
+                  </td>
+                  <td colSpan={activeEmployees.length} style={{ padding: '7px 14px', color: '#CBD5E1', fontSize: 12, fontStyle: 'italic' }}>Libur akhir pekan</td>
+                </tr>
+              );
+
+              if (isHoliday) return (
+                <tr key={day} style={{ background: '#FFFBEB' }}>
+                  <td style={{ position: 'sticky', left: 0, zIndex: 10, padding: '7px 16px', borderRight: '2px solid #FDE68A', background: '#FFFBEB' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontSize: 15, fontWeight: 700, color: '#D97706', minWidth: 22 }}>{day}</span>
+                      <span style={{ fontSize: 11, color: '#D97706', fontWeight: 500 }}>{dayName}</span>
+                    </div>
+                  </td>
+                  <td colSpan={activeEmployees.length} style={{ padding: '7px 14px', color: '#D97706', fontSize: 12, fontWeight: 500 }}>
+                    Libur Nasional — {holidayName}
+                  </td>
+                </tr>
+              );
+
+              const isWfhTargetDay = day === wfhDay;
+              const rowBg = isToday ? '#EEF2FF' : isWfhTargetDay && selectMode ? '#FFFBEB' : 'white';
+
+              return (
+                <tr key={day} style={{ background: rowBg }}>
+                  <td style={{
+                    position: 'sticky', left: 0, zIndex: 10,
+                    padding: '7px 16px', borderRight: '2px solid #E2E8F0',
+                    background: rowBg, borderBottom: '1px solid #F1F5F9',
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontSize: 15, fontWeight: 700, color: isToday ? 'var(--color-primary)' : '#0F172A', minWidth: 22 }}>{day}</span>
+                      <span style={{ fontSize: 11, fontWeight: 500, color: isToday ? 'var(--color-primary)' : '#94A3B8' }}>{dayName}</span>
+                    </div>
+                    {isToday && <div style={{ fontSize: 10, color: 'var(--color-primary)', fontWeight: 600, marginTop: 2, letterSpacing: '0.04em' }}>HARI INI</div>}
+                    {isWfhTargetDay && selectMode && <div style={{ fontSize: 10, color: '#D97706', fontWeight: 700, marginTop: 2 }}>TARGET WFH</div>}
+                  </td>
+                  {activeEmployees.map(emp => {
+                    const rec = (attendanceData[emp.id] || {})[day];
+                    const isColSelected = selectMode && selectedEmpIds.has(emp.id);
+                    return (
+                      <td
+                        key={emp.id}
+                        onClick={!selectMode ? (e) => handleCellEdit(e, emp.id, emp.name, day, dayInfo, rec) : undefined}
+                        style={{
+                          padding: '7px 10px', border: '1px solid #F1F5F9',
+                          cursor: !selectMode && (dayInfo.isPast || dayInfo.isToday) ? 'pointer' : 'default',
+                          minWidth: 140,
+                          background: isColSelected && isWfhTargetDay ? '#DBEAFE' :
+                                      isColSelected ? '#F0F9FF' : 'transparent',
+                          transition: 'background 0.1s', verticalAlign: 'middle', position: 'relative',
+                        }}
+                        onMouseEnter={e => { if (!selectMode && (dayInfo.isPast || dayInfo.isToday)) e.currentTarget.style.background = '#F8FAFC'; }}
+                        onMouseLeave={e => {
+                          if (!selectMode) {
+                            e.currentTarget.style.background = isColSelected && isWfhTargetDay ? '#DBEAFE' :
+                                                               isColSelected ? '#F0F9FF' : 'transparent';
+                          }
+                        }}
+                      >
+                        {rec ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                            <StatusBadge status={rec.status} size="sm" />
+                            {rec.timeIn && (
+                              <span style={{ fontSize: 11, color: '#94A3B8', display: 'flex', alignItems: 'center', gap: 3 }}>
+                                <Icons.Clock /> {rec.timeIn} – {rec.timeOut}
+                              </span>
+                            )}
+                          </div>
+                        ) : (dayInfo.isPast || dayInfo.isToday) ? (
+                          <span style={{ fontSize: 12, color: '#CBD5E1' }}>+ Input</span>
+                        ) : (
+                          <span style={{ color: '#E2E8F0', fontSize: 12 }}>—</span>
+                        )}
+                      </td>
+                    );
+                  })}
+                </tr>
+              );
+            })}
+
+            {/* Summary row */}
+            <tr style={{ position: 'sticky', bottom: 0, zIndex: 20, background: '#F8FAFC', borderTop: '2px solid #E2E8F0' }}>
+              <td style={{ position: 'sticky', left: 0, zIndex: 30, padding: '10px 16px', fontWeight: 700, fontSize: 12, color: '#0F172A', background: '#F8FAFC', borderRight: '2px solid #E2E8F0' }}>
+                TOTAL
+              </td>
+              {activeEmployees.map(emp => {
+                const counts = getSummary(emp.id);
+                const hadirTotal = (counts['hadir'] || 0) + (counts['terlambat'] || 0) + (counts['wfh'] || 0) + (counts['dinas_luar'] || 0) + (counts['sidang'] || 0) + (counts['pendampingan'] || 0);
+                return (
+                  <td key={emp.id} style={{ padding: '8px 10px', borderRight: '1px solid #E2E8F0' }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: '#22c55e' }}>{hadirTotal} hadir</span>
+                      {counts['alpha'] > 0 && <span style={{ fontSize: 12, fontWeight: 700, color: '#dc2626' }}>{counts['alpha']} alpha</span>}
+                      {((counts['izin'] || 0) + (counts['sakit'] || 0) + (counts['cuti'] || 0)) > 0 && (
+                        <span style={{ fontSize: 11, color: '#94A3B8' }}>{(counts['izin'] || 0) + (counts['sakit'] || 0) + (counts['cuti'] || 0)} absent</span>
+                      )}
+                    </div>
+                  </td>
+                );
+              })}
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      {/* Floating action bar — select mode */}
+      {selectMode && (
+        <div style={{
+          position: 'absolute', bottom: 24, left: '50%', transform: 'translateX(-50%)',
+          background: '#0F172A', color: 'white', borderRadius: 14,
+          padding: '12px 20px', display: 'flex', alignItems: 'center', gap: 14,
+          boxShadow: '0 8px 32px rgba(0,0,0,0.28)', zIndex: 200,
+          animation: 'slideUp 0.2s ease', whiteSpace: 'nowrap',
+        }}>
+          <span style={{ fontSize: 13, fontWeight: 500, color: selectedEmpIds.size > 0 ? 'white' : '#94A3B8' }}>
+            {selectedEmpIds.size > 0
+              ? `${selectedEmpIds.size} karyawan dipilih`
+              : 'Belum ada karyawan dipilih'}
+          </span>
+          <div style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.15)' }} />
+          <button
+            onClick={doSetWfhSelected}
+            disabled={selectedEmpIds.size === 0}
+            style={{
+              padding: '7px 16px', borderRadius: 8, border: 'none',
+              background: selectedEmpIds.size > 0 ? '#0EA5E9' : '#334155',
+              color: 'white', fontSize: 13, fontWeight: 600,
+              cursor: selectedEmpIds.size > 0 ? 'pointer' : 'not-allowed',
+              transition: 'background 0.15s',
+            }}
+          >
+            Terapkan WFH {wfhDayLabel && `— ${wfhDayLabel}`}
+          </button>
+          <button onClick={exitSelectMode} style={{
+            padding: '7px 14px', borderRadius: 8,
+            border: '1px solid rgba(255,255,255,0.2)', background: 'transparent',
+            color: '#94A3B8', fontSize: 13, cursor: 'pointer',
+          }}>
+            Batal
+          </button>
+        </div>
+      )}
+
+      {/* Confirm dialog — Set WFH Semua */}
+      <ConfirmDialog
+        isOpen={confirmWfhAll}
+        onClose={() => setConfirmWfhAll(false)}
+        onConfirm={doSetWfhAll}
+        title="Set WFH Semua"
+        message={`Set WFH untuk ${empsWithoutData.length} karyawan pada ${wfhDayLabel}? Karyawan yang sudah ada data tidak akan tertimpa.`}
+        confirmLabel="Ya, Set WFH"
+        isDanger={false}
+      />
+
+      {/* Cell edit popover */}
+      {popover && (
+        <AttendancePopover
+          popover={popover}
+          onSave={handleSave}
+          onClose={() => setPopover(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+Object.assign(window, { AbsensiPage });
+
+  </script>
+
+  <!-- page-uang-makan.jsx -->
+  <script type="text/babel">
+// ============================================================
+// page-uang-makan.jsx — Meal Allowance
+// ============================================================
+
+function UangMakanPage() {
+  const ctx = React.useContext(AppContext);
+  const employees = ctx ? ctx.employees : INITIAL_EMPLOYEES;
+  const attendanceData = ctx ? ctx.attendanceData : INITIAL_ATTENDANCE;
+  const showToast = ctx ? ctx.showToast : () => {};
+
+  const [exportLoading, setExportLoading] = React.useState(false);
+  const activeEmployees = employees.filter(e => e.active);
+
+  const rows = activeEmployees.map(emp => {
+    const empData = attendanceData[emp.id] || {};
+    const records = Object.values(empData);
+    const hariHadir = records.filter(r => MEAL_ELIGIBLE.includes(r.status)).length;
+    const hariAlpha = records.filter(r => r.status === 'alpha').length;
+    const potongan = hariAlpha * emp.tarif;
+    const total = hariHadir * emp.tarif - potongan;
+    return { emp, hariHadir, hariAlpha, potongan, total };
+  });
+
+  const grandTotal = rows.reduce((s, r) => s + r.total, 0);
+
+  const handleExport = () => {
+    setExportLoading(true);
+    setTimeout(() => {
+      setExportLoading(false);
+      showToast('Rekap uang makan berhasil diunduh');
+    }, 1600);
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      <PageHeader
+        title="Uang Makan"
+        subtitle="Rekap tunjangan makan — Mei 2026"
+        actions={
+          <>
+            <MonthNav label="Mei 2026" />
+            <button onClick={handleExport} style={sharedStyles.btnPrimary} disabled={exportLoading}>
+              <Icons.Download />
+              {exportLoading ? 'Mengunduh...' : 'Export Excel'}
+            </button>
+          </>
+        }
+      />
+
+      <div style={{ flex: 1, overflowY: 'auto', padding: 24 }}>
+
+        {/* Info banner */}
+        <div style={{
+          background: '#EEF2FF', border: '1px solid #C7D2FE',
+          borderRadius: 10, padding: '12px 16px', marginBottom: 20,
+          display: 'flex', alignItems: 'center', gap: 10,
+          fontSize: 13, color: '#4338CA',
+        }}>
+          <Icons.AlertCircle />
+          <span>
+            Uang makan dihitung berdasarkan hari hadir (termasuk WFH, Terlambat, Dinas Luar, Sidang, Pendampingan).
+            Potongan berlaku untuk status <strong>Alpha</strong>.
+          </span>
+        </div>
+
+        {/* Table */}
+        <div style={{
+          background: 'white', borderRadius: 14, border: '1px solid #E2E8F0',
+          overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+        }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+            <thead>
+              <tr style={{ background: '#F8FAFC' }}>
+                {['Karyawan', 'Jabatan', 'Tarif/Hari', 'Hari Hadir', 'Hari Alpha', 'Potongan', 'Total'].map((h, i) => (
+                  <th key={h} style={{
+                    padding: '12px 16px', textAlign: i >= 2 ? 'right' : 'left',
+                    fontSize: 11, fontWeight: 600, color: '#64748B',
+                    textTransform: 'uppercase', letterSpacing: '0.06em',
+                    borderBottom: '1px solid #E2E8F0',
+                    whiteSpace: 'nowrap',
+                  }}>
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map(({ emp, hariHadir, hariAlpha, potongan, total }, i) => (
+                <tr key={emp.id} style={{
+                  background: i % 2 === 0 ? 'white' : '#FAFAFA',
+                  borderBottom: '1px solid #F1F5F9',
+                  transition: 'background 0.1s',
+                }}
+                  onMouseEnter={e => e.currentTarget.style.background = '#F0F9FF'}
+                  onMouseLeave={e => e.currentTarget.style.background = i % 2 === 0 ? 'white' : '#FAFAFA'}
+                >
+                  <td style={{ padding: '14px 16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <Avatar name={emp.name} id={emp.id} size={34} />
+                      <span style={{ fontWeight: 600, color: '#0F172A' }}>{emp.name}</span>
+                    </div>
+                  </td>
+                  <td style={{ padding: '14px 16px', color: '#64748B' }}>{emp.role}</td>
+                  <td style={{ padding: '14px 16px', textAlign: 'right', color: '#0F172A', fontWeight: 500 }}>
+                    {formatRupiah(emp.tarif)}
+                  </td>
+                  <td style={{ padding: '14px 16px', textAlign: 'right' }}>
+                    <span style={{
+                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                      width: 32, height: 28, borderRadius: 6,
+                      background: '#F0FDF4', color: '#16A34A', fontWeight: 700, fontSize: 13,
+                    }}>
+                      {hariHadir}
+                    </span>
+                  </td>
+                  <td style={{ padding: '14px 16px', textAlign: 'right' }}>
+                    {hariAlpha > 0 ? (
+                      <span style={{
+                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                        width: 32, height: 28, borderRadius: 6,
+                        background: '#FEF2F2', color: '#DC2626', fontWeight: 700, fontSize: 13,
+                      }}>
+                        {hariAlpha}
+                      </span>
+                    ) : (
+                      <span style={{ color: '#CBD5E1', fontSize: 12 }}>—</span>
+                    )}
+                  </td>
+                  <td style={{ padding: '14px 16px', textAlign: 'right', color: potongan > 0 ? '#DC2626' : '#CBD5E1', fontWeight: potongan > 0 ? 500 : 400 }}>
+                    {potongan > 0 ? `- ${formatRupiah(potongan)}` : '—'}
+                  </td>
+                  <td style={{ padding: '14px 16px', textAlign: 'right', fontWeight: 700, color: '#0F172A', fontSize: 14 }}>
+                    {formatRupiah(total)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+            {/* Grand total footer */}
+            <tfoot>
+              <tr style={{ background: '#0F172A', position: 'sticky', bottom: 0 }}>
+                <td colSpan={6} style={{ padding: '14px 16px', color: '#94A3B8', fontSize: 13, fontWeight: 500 }}>
+                  Total Uang Makan — {activeEmployees.length} karyawan aktif, Mei 2026
+                </td>
+                <td style={{ padding: '14px 16px', textAlign: 'right', fontWeight: 800, fontSize: 16, color: 'white' }}>
+                  {formatRupiah(grandTotal)}
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        {/* Per-employee breakdown cards */}
+        <div style={{ marginTop: 24 }}>
+          <h2 style={{ fontSize: 15, fontWeight: 700, color: '#0F172A', marginBottom: 14 }}>Detail per Karyawan</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14 }}>
+            {rows.map(({ emp, hariHadir, total }) => {
+              const empData = attendanceData[emp.id] || {};
+              const statusBreakdown = {};
+              Object.values(empData).forEach(r => {
+                statusBreakdown[r.status] = (statusBreakdown[r.status] || 0) + 1;
+              });
+              return (
+                <div key={emp.id} style={{
+                  background: 'white', borderRadius: 12, border: '1px solid #E2E8F0',
+                  padding: '16px 18px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+                    <Avatar name={emp.name} id={emp.id} size={38} />
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: 14, color: '#0F172A' }}>{emp.name}</div>
+                      <div style={{ fontSize: 11, color: '#94A3B8' }}>{emp.role}</div>
+                    </div>
+                    <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
+                      <div style={{ fontSize: 15, fontWeight: 800, color: '#0F172A' }}>{formatRupiah(total)}</div>
+                      <div style={{ fontSize: 11, color: '#94A3B8' }}>{hariHadir} hari × {formatRupiah(emp.tarif)}</div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+                    {Object.entries(statusBreakdown).map(([s, count]) => {
+                      const cfg = STATUS_CONFIG[s];
+                      if (!cfg) return null;
+                      return (
+                        <span key={s} style={{
+                          fontSize: 11, padding: '3px 8px', borderRadius: 5,
+                          background: cfg.bg, color: cfg.color,
+                          border: `1px solid ${cfg.color}25`, fontWeight: 500,
+                        }}>
+                          {cfg.label}: {count}
+                        </span>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+Object.assign(window, { UangMakanPage });
+
+  </script>
+
+  <!-- page-karyawan.jsx -->
+  <script type="text/babel">
+// ============================================================
+// page-karyawan.jsx — Employee Management
+// ============================================================
+
+function EmployeeModal({ isOpen, onClose, employee, onSave }) {
+  const isEdit = !!employee;
+  const [form, setForm] = React.useState(employee ? {
+    name: employee.name, role: employee.role,
+    tarif: employee.tarif, phone: employee.phone,
+    email: employee.email, joinDate: employee.joinDate,
+    active: employee.active,
+  } : {
+    name: '', role: '', tarif: 25000,
+    phone: '', email: '', joinDate: new Date().toISOString().slice(0, 10),
+    active: true,
+  });
+  const [errors, setErrors] = React.useState({});
+
+  const set = (key, val) => {
+    setForm(prev => ({ ...prev, [key]: val }));
+    setErrors(prev => ({ ...prev, [key]: '' }));
+  };
+
+  const validate = () => {
+    const errs = {};
+    if (!form.name.trim()) errs.name = 'Nama wajib diisi';
+    if (!form.role.trim()) errs.role = 'Jabatan wajib diisi';
+    if (!form.email.trim()) errs.email = 'Email wajib diisi';
+    if (form.tarif <= 0) errs.tarif = 'Tarif harus lebih dari 0';
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
+  const handleSave = () => {
+    if (!validate()) return;
+    onSave({ ...form, tarif: Number(form.tarif) });
+    onClose();
+  };
+
+  const ROLES = ['Staff Admin', 'HR Officer', 'Finance Staff', 'Marketing Staff', 'IT Support', 'Manager', 'Direktur', 'Lainnya'];
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title={isEdit ? 'Edit Karyawan' : 'Tambah Karyawan'}
+      width={520}
+      footer={
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+          <button onClick={onClose} style={sharedStyles.btnSecondary}>Batal</button>
+          <button onClick={handleSave} style={sharedStyles.btnPrimary}>
+            {isEdit ? 'Simpan Perubahan' : 'Tambah Karyawan'}
+          </button>
+        </div>
+      }
+    >
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
+        <div style={{ gridColumn: '1 / -1' }}>
+          <FormInput label="Nama Lengkap *" value={form.name} onChange={e => set('name', e.target.value)}
+            placeholder="cth. Budi Santoso" error={errors.name} />
+        </div>
+        <FormSelect label="Jabatan *" value={form.role} onChange={e => set('role', e.target.value)}>
+          <option value="">Pilih jabatan...</option>
+          {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+        </FormSelect>
+        <div>
+          <label style={sharedStyles.label}>Tarif Makan/Hari (Rp) *</label>
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ position: 'relative' }}>
+              <span style={{
+                position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)',
+                fontSize: 13, color: '#64748B', pointerEvents: 'none',
+              }}>Rp</span>
+              <input type="number" value={form.tarif} onChange={e => set('tarif', e.target.value)}
+                style={{ ...sharedStyles.input, paddingLeft: 36 }}
+                min={0} step={1000} />
+            </div>
+            {errors.tarif && <p style={{ margin: '4px 0 0', fontSize: 12, color: '#EF4444' }}>{errors.tarif}</p>}
+          </div>
+        </div>
+        <FormInput label="Email" value={form.email} onChange={e => set('email', e.target.value)}
+          placeholder="nama@perusahaan.co.id" error={errors.email} type="email" />
+        <FormInput label="No. HP" value={form.phone} onChange={e => set('phone', e.target.value)}
+          placeholder="0812-xxxx-xxxx" />
+        <FormInput label="Tanggal Bergabung" value={form.joinDate} onChange={e => set('joinDate', e.target.value)}
+          type="date" />
+        <div style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', background: '#F8FAFC', borderRadius: 8, border: '1px solid #E2E8F0' }}>
+          <input type="checkbox" id="emp-active" checked={form.active} onChange={e => set('active', e.target.checked)}
+            style={{ width: 16, height: 16, accentColor: 'var(--color-primary)', cursor: 'pointer' }} />
+          <label htmlFor="emp-active" style={{ fontSize: 13, color: '#0F172A', cursor: 'pointer', fontWeight: 500 }}>
+            Karyawan aktif
+          </label>
+          <span style={{ fontSize: 12, color: '#94A3B8' }}>— Karyawan non-aktif tidak muncul di tabel absensi</span>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+// ── Employee Card ─────────────────────────────────────────────
+function EmployeeCard({ emp, onEdit, onDeactivate }) {
+  const [hovered, setHovered] = React.useState(false);
+
+  return (
+    <div
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        background: 'white', borderRadius: 14, border: '1px solid #E2E8F0',
+        padding: '20px', boxShadow: hovered ? '0 4px 16px rgba(0,0,0,0.08)' : '0 1px 3px rgba(0,0,0,0.04)',
+        transition: 'all 0.18s', position: 'relative', overflow: 'hidden',
+        opacity: emp.active ? 1 : 0.6,
+      }}
+    >
+      {/* Inactive badge */}
+      {!emp.active && (
+        <div style={{
+          position: 'absolute', top: 12, right: 12,
+          background: '#FEF2F2', color: '#DC2626', fontSize: 10,
+          fontWeight: 700, padding: '2px 8px', borderRadius: 20,
+          letterSpacing: '0.04em', textTransform: 'uppercase',
+        }}>
+          Non-aktif
+        </div>
+      )}
+
+      {/* Avatar + name */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+        <Avatar name={emp.name} id={emp.id} size={46} />
+        <div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: '#0F172A' }}>{emp.name}</div>
+          <div style={{ fontSize: 12, color: '#64748B', marginTop: 2 }}>{emp.role}</div>
+        </div>
+      </div>
+
+      {/* Details */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 16 }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 12, color: '#475569' }}>
+          <span style={{ color: '#94A3B8', width: 14, flexShrink: 0 }}>📧</span>
+          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{emp.email}</span>
+        </div>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 12, color: '#475569' }}>
+          <span style={{ color: '#94A3B8', width: 14, flexShrink: 0 }}>📱</span>
+          {emp.phone}
+        </div>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 12, color: '#475569' }}>
+          <span style={{ color: '#94A3B8', width: 14, flexShrink: 0 }}>🗓</span>
+          Bergabung {new Date(emp.joinDate).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' })}
+        </div>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 12, color: '#475569' }}>
+          <span style={{ color: '#94A3B8', width: 14, flexShrink: 0 }}>🍱</span>
+          Tarif makan <strong style={{ color: '#0F172A' }}>{formatRupiah(emp.tarif)}</strong>/hari
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div style={{ display: 'flex', gap: 6, borderTop: '1px solid #F1F5F9', paddingTop: 14 }}>
+        <button onClick={() => onEdit(emp)} style={{
+          ...sharedStyles.btnSecondary, fontSize: 12, padding: '6px 12px', flex: 1,
+          justifyContent: 'center',
+        }}>
+          <Icons.Edit /> Edit
+        </button>
+        <button onClick={() => onDeactivate(emp)} style={{
+          ...sharedStyles.btnSecondary, fontSize: 12, padding: '6px 10px',
+          color: emp.active ? '#EF4444' : '#10B981',
+          borderColor: emp.active ? '#FCA5A5' : '#6EE7B7',
+        }}>
+          {emp.active ? 'Non-aktifkan' : 'Aktifkan'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── Karyawan Page ─────────────────────────────────────────────
+function KaryawanPage() {
+  const ctx = React.useContext(AppContext);
+  const employees = ctx ? ctx.employees : INITIAL_EMPLOYEES;
+  const addEmployee = ctx ? ctx.addEmployee : () => {};
+  const updateEmployee = ctx ? ctx.updateEmployee : () => {};
+  const showToast = ctx ? ctx.showToast : () => {};
+
+  const [modalOpen, setModalOpen] = React.useState(false);
+  const [editingEmp, setEditingEmp] = React.useState(null);
+  const [confirmDeactivate, setConfirmDeactivate] = React.useState(null);
+  const [filter, setFilter] = React.useState('active');
+
+  const filtered = employees.filter(e => {
+    if (filter === 'active') return e.active;
+    if (filter === 'inactive') return !e.active;
+    return true;
+  });
+
+  const handleEdit = (emp) => { setEditingEmp(emp); setModalOpen(true); };
+  const handleAdd = () => { setEditingEmp(null); setModalOpen(true); };
+  const handleSave = (data) => {
+    if (editingEmp) updateEmployee(editingEmp.id, data);
+    else addEmployee(data);
+  };
+  const handleDeactivate = (emp) => setConfirmDeactivate(emp);
+  const doDeactivate = () => {
+    updateEmployee(confirmDeactivate.id, { active: !confirmDeactivate.active });
+    showToast(confirmDeactivate.active ? 'Karyawan berhasil dinonaktifkan' : 'Karyawan berhasil diaktifkan');
+    setConfirmDeactivate(null);
+  };
+
+  const activeCount = employees.filter(e => e.active).length;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      <PageHeader
+        title="Karyawan"
+        subtitle={`${activeCount} aktif dari ${employees.length} total karyawan`}
+        actions={
+          <button onClick={handleAdd} style={sharedStyles.btnPrimary}>
+            <Icons.Plus /> Tambah Karyawan
+          </button>
+        }
+      />
+
+      <div style={{ flex: 1, overflowY: 'auto', padding: 24 }}>
+        {/* Filter tabs */}
+        <div style={{ display: 'flex', gap: 6, marginBottom: 20 }}>
+          {[['active', 'Aktif'], ['inactive', 'Non-aktif'], ['all', 'Semua']].map(([val, label]) => (
+            <button key={val} onClick={() => setFilter(val)} style={{
+              padding: '6px 14px', borderRadius: 8, border: '1px solid',
+              fontSize: 13, fontWeight: 500, cursor: 'pointer', transition: 'all 0.12s',
+              background: filter === val ? 'var(--color-primary)' : 'white',
+              color: filter === val ? 'white' : '#475569',
+              borderColor: filter === val ? 'var(--color-primary)' : '#E2E8F0',
+            }}>
+              {label}
+              {val === 'active' && (
+                <span style={{
+                  marginLeft: 6, fontSize: 11, fontWeight: 700,
+                  background: filter === val ? 'rgba(255,255,255,0.25)' : '#EEF2FF',
+                  color: filter === val ? 'white' : 'var(--color-primary)',
+                  padding: '1px 6px', borderRadius: 10,
+                }}>
+                  {activeCount}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+
+        {/* Grid */}
+        {filtered.length > 0 ? (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
+            {filtered.map(emp => (
+              <EmployeeCard key={emp.id} emp={emp} onEdit={handleEdit} onDeactivate={handleDeactivate} />
+            ))}
+          </div>
+        ) : (
+          <div style={{ textAlign: 'center', padding: '60px 20px', color: '#94A3B8' }}>
+            <div style={{ fontSize: 40, marginBottom: 12 }}>👥</div>
+            <div style={{ fontSize: 15, fontWeight: 600, color: '#475569', marginBottom: 4 }}>Tidak ada karyawan</div>
+            <div style={{ fontSize: 13 }}>Coba ubah filter atau tambah karyawan baru.</div>
+          </div>
+        )}
+      </div>
+
+      {/* Add/Edit Modal */}
+      <EmployeeModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        employee={editingEmp}
+        onSave={handleSave}
+      />
+
+      {/* Deactivate confirm */}
+      <ConfirmDialog
+        isOpen={!!confirmDeactivate}
+        onClose={() => setConfirmDeactivate(null)}
+        onConfirm={doDeactivate}
+        title={confirmDeactivate?.active ? 'Non-aktifkan Karyawan' : 'Aktifkan Karyawan'}
+        message={confirmDeactivate?.active
+          ? `Yakin ingin menonaktifkan ${confirmDeactivate?.name}? Karyawan tidak akan muncul di tabel absensi.`
+          : `Aktifkan kembali ${confirmDeactivate?.name}? Karyawan akan muncul kembali di tabel absensi.`}
+        confirmLabel={confirmDeactivate?.active ? 'Non-aktifkan' : 'Aktifkan'}
+        isDanger={!!confirmDeactivate?.active}
+      />
+    </div>
+  );
+}
+
+Object.assign(window, { KaryawanPage });
+
+  </script>
+
+  <!-- page-pengaturan.jsx -->
+  <script type="text/babel">
+// ============================================================
+// page-pengaturan.jsx — Settings
+// ============================================================
+
+function PengaturanPage() {
+  const ctx = React.useContext(AppContext);
+  const settings = ctx ? ctx.settings : INITIAL_SETTINGS;
+  const updateSettings = ctx ? ctx.updateSettings : () => {};
+  const showToast = ctx ? ctx.showToast : () => {};
+
+  const [form, setForm] = React.useState({ ...settings });
+  const [saved, setSaved] = React.useState(false);
+
+  const set = (key, val) => {
+    setForm(prev => ({ ...prev, [key]: val }));
+    setSaved(false);
+  };
+
+  const toggleHariKerja = (day) => {
+    setForm(prev => {
+      const current = prev.hariKerja || [];
+      const next = current.includes(day)
+        ? current.filter(d => d !== day)
+        : [...current, day].sort();
+      return { ...prev, hariKerja: next };
+    });
+    setSaved(false);
+  };
+
+  const handleSave = () => {
+    updateSettings(form);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 3000);
+  };
+
+  const DAY_LABELS = { 1: 'Senin', 2: 'Selasa', 3: 'Rabu', 4: 'Kamis', 5: 'Jumat', 6: 'Sabtu', 0: 'Minggu' };
+
+  const sectionStyle = {
+    background: 'white', borderRadius: 14, border: '1px solid #E2E8F0',
+    padding: '20px 24px', marginBottom: 20,
+    boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+  };
+  const sectionTitleStyle = {
+    fontSize: 15, fontWeight: 700, color: '#0F172A',
+    marginBottom: 18, paddingBottom: 12,
+    borderBottom: '1px solid #F1F5F9',
+  };
+  const rowStyle = {
+    display: 'flex', alignItems: 'center',
+    justifyContent: 'space-between', gap: 16,
+    marginBottom: 14, flexWrap: 'wrap',
+  };
+  const rowLabelStyle = { fontSize: 13, fontWeight: 500, color: '#0F172A', minWidth: 200 };
+  const rowSubStyle = { fontSize: 12, color: '#94A3B8', marginTop: 2 };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      <PageHeader
+        title="Pengaturan"
+        subtitle="Konfigurasi perusahaan dan aturan kehadiran"
+        actions={
+          <button onClick={handleSave} style={{
+            ...sharedStyles.btnPrimary,
+            background: saved ? '#10B981' : 'var(--color-primary)',
+          }}>
+            {saved ? <><Icons.Check /> Tersimpan</> : 'Simpan Pengaturan'}
+          </button>
+        }
+      />
+
+      <div style={{ flex: 1, overflowY: 'auto', padding: 24 }}>
+
+        {/* Company Info */}
+        <div style={sectionStyle}>
+          <h2 style={sectionTitleStyle}>Informasi Perusahaan</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 20px' }}>
+            <FormInput label="Nama Perusahaan" value={form.namaPerusahaan || ''}
+              onChange={e => set('namaPerusahaan', e.target.value)} />
+            <FormInput label="Tarif Makan Default (Rp/hari)" value={form.tarifMakanDefault || 25000}
+              type="number" min={0} step={1000}
+              onChange={e => set('tarifMakanDefault', Number(e.target.value))} />
+          </div>
+        </div>
+
+        {/* Attendance rules */}
+        <div style={sectionStyle}>
+          <h2 style={sectionTitleStyle}>Aturan Kehadiran</h2>
+
+          <div style={rowStyle}>
+            <div>
+              <div style={rowLabelStyle}>Jam Masuk Normal</div>
+              <div style={rowSubStyle}>Waktu check-in yang dianggap tepat waktu</div>
+            </div>
+            <input type="time" value={form.jamMasuk}
+              onChange={e => set('jamMasuk', e.target.value)}
+              style={{ ...sharedStyles.input, width: 'auto', padding: '8px 12px', minWidth: 130 }} />
+          </div>
+
+          <div style={rowStyle}>
+            <div>
+              <div style={rowLabelStyle}>Toleransi Keterlambatan</div>
+              <div style={rowSubStyle}>Menit setelah jam masuk yang masih dianggap tepat waktu</div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <input type="number" value={form.toleransiMenit} min={0} max={60} step={5}
+                onChange={e => set('toleransiMenit', Number(e.target.value))}
+                style={{ ...sharedStyles.input, width: 80, textAlign: 'center' }} />
+              <span style={{ fontSize: 13, color: '#64748B', whiteSpace: 'nowrap' }}>menit</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Work days */}
+        <div style={sectionStyle}>
+          <h2 style={sectionTitleStyle}>Hari Kerja</h2>
+          <p style={{ fontSize: 13, color: '#64748B', marginBottom: 14 }}>
+            Pilih hari yang dihitung sebagai hari kerja. Hari di luar ini akan otomatis ditandai libur.
+          </p>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {[1, 2, 3, 4, 5, 6, 0].map(day => {
+              const isOn = (form.hariKerja || []).includes(day);
+              return (
+                <button key={day} onClick={() => toggleHariKerja(day)} style={{
+                  padding: '8px 18px', borderRadius: 8, border: '2px solid',
+                  fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'all 0.12s',
+                  background: isOn ? 'var(--color-primary)' : 'white',
+                  color: isOn ? 'white' : '#475569',
+                  borderColor: isOn ? 'var(--color-primary)' : '#E2E8F0',
+                }}>
+                  {DAY_LABELS[day]}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Meal allowance rules */}
+        <div style={sectionStyle}>
+          <h2 style={sectionTitleStyle}>Aturan Uang Makan</h2>
+          <p style={{ fontSize: 13, color: '#64748B', marginBottom: 16 }}>
+            Tentukan status kehadiran mana yang berhak mendapat uang makan.
+          </p>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 8 }}>
+            {Object.entries(STATUS_CONFIG).map(([key, cfg]) => {
+              const eligible = MEAL_ELIGIBLE.includes(key);
+              return (
+                <div key={key} style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '10px 14px', borderRadius: 8,
+                  background: eligible ? cfg.bg : '#F8FAFC',
+                  border: `1px solid ${eligible ? cfg.color + '40' : '#E2E8F0'}`,
+                }}>
+                  <div style={{
+                    width: 10, height: 10, borderRadius: '50%',
+                    background: eligible ? cfg.color : '#CBD5E1', flexShrink: 0,
+                  }} />
+                  <span style={{ fontSize: 13, fontWeight: 500, color: eligible ? cfg.color : '#94A3B8' }}>
+                    {cfg.label}
+                  </span>
+                  <span style={{
+                    marginLeft: 'auto', fontSize: 11, fontWeight: 600,
+                    color: eligible ? cfg.color : '#CBD5E1',
+                  }}>
+                    {eligible ? '✓ Dapat' : '✗ Tidak'}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+
+          <div style={{
+            marginTop: 16, padding: '12px 14px', background: '#FFFBEB',
+            borderRadius: 8, border: '1px solid #FDE68A', fontSize: 13, color: '#92400E',
+          }}>
+            Status yang berhak uang makan dapat diubah melalui pengembang. Saat ini: Hadir, Terlambat, WFH, Dinas Luar, Sidang, Pendampingan.
+          </div>
+        </div>
+
+        {/* Deduction rules */}
+        <div style={sectionStyle}>
+          <h2 style={sectionTitleStyle}>Aturan Potongan</h2>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', background: '#FEF2F2', borderRadius: 8, border: '1px solid #FCA5A5' }}>
+            <input type="checkbox" id="potong-alpha" checked={form.potonganAlpha}
+              onChange={e => set('potonganAlpha', e.target.checked)}
+              style={{ width: 16, height: 16, accentColor: '#EF4444', cursor: 'pointer', flexShrink: 0 }} />
+            <div>
+              <label htmlFor="potong-alpha" style={{ fontSize: 13, fontWeight: 600, color: '#DC2626', cursor: 'pointer' }}>
+                Potong uang makan untuk status <strong>Alpha</strong>
+              </label>
+              <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 2 }}>
+                Karyawan yang Alpha (tidak hadir tanpa keterangan) akan dipotong uang makan sejumlah tarif per hari.
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
+Object.assign(window, { PengaturanPage });
+
+  </script>
+
+  <!-- tweaks-panel.jsx -->
+  <script type="text/babel">
+
+// tweaks-panel.jsx
+// Reusable Tweaks shell + form-control helpers.
+//
+// Owns the host protocol (listens for __activate_edit_mode / __deactivate_edit_mode,
+// posts __edit_mode_available / __edit_mode_set_keys / __edit_mode_dismissed) so
+// individual prototypes don't re-roll it. Ships a consistent set of controls so you
+// don't hand-draw <input type="range">, segmented radios, steppers, etc.
+//
+// Usage (in an HTML file that loads React + Babel):
+//
+//   const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+//     "primaryColor": "#D97757",
+//     "palette": ["#D97757", "#29261b", "#f6f4ef"],
+//     "fontSize": 16,
+//     "density": "regular",
+//     "dark": false
+//   }/*EDITMODE-END*/;
+//
+//   function App() {
+//     const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+//     return (
+//       <div style={{ fontSize: t.fontSize, color: t.primaryColor }}>
+//         Hello
+//         <TweaksPanel>
+//           <TweakSection label="Typography" />
+//           <TweakSlider label="Font size" value={t.fontSize} min={10} max={32} unit="px"
+//                        onChange={(v) => setTweak('fontSize', v)} />
+//           <TweakRadio  label="Density" value={t.density}
+//                        options={['compact', 'regular', 'comfy']}
+//                        onChange={(v) => setTweak('density', v)} />
+//           <TweakSection label="Theme" />
+//           <TweakColor  label="Primary" value={t.primaryColor}
+//                        options={['#D97757', '#2A6FDB', '#1F8A5B', '#7A5AE0']}
+//                        onChange={(v) => setTweak('primaryColor', v)} />
+//           <TweakColor  label="Palette" value={t.palette}
+//                        options={[['#D97757', '#29261b', '#f6f4ef'],
+//                                  ['#475569', '#0f172a', '#f1f5f9']]}
+//                        onChange={(v) => setTweak('palette', v)} />
+//           <TweakToggle label="Dark mode" value={t.dark}
+//                        onChange={(v) => setTweak('dark', v)} />
+//         </TweaksPanel>
+//       </div>
+//     );
+//   }
+//
+// ─────────────────────────────────────────────────────────────────────────────
+
+const __TWEAKS_STYLE = `
+  .twk-panel{position:fixed;right:16px;bottom:16px;z-index:2147483646;width:280px;
+    max-height:calc(100vh - 32px);display:flex;flex-direction:column;
+    transform:scale(var(--dc-inv-zoom,1));transform-origin:bottom right;
+    background:rgba(250,249,247,.78);color:#29261b;
+    -webkit-backdrop-filter:blur(24px) saturate(160%);backdrop-filter:blur(24px) saturate(160%);
+    border:.5px solid rgba(255,255,255,.6);border-radius:14px;
+    box-shadow:0 1px 0 rgba(255,255,255,.5) inset,0 12px 40px rgba(0,0,0,.18);
+    font:11.5px/1.4 ui-sans-serif,system-ui,-apple-system,sans-serif;overflow:hidden}
+  .twk-hd{display:flex;align-items:center;justify-content:space-between;
+    padding:10px 8px 10px 14px;cursor:move;user-select:none}
+  .twk-hd b{font-size:12px;font-weight:600;letter-spacing:.01em}
+  .twk-x{appearance:none;border:0;background:transparent;color:rgba(41,38,27,.55);
+    width:22px;height:22px;border-radius:6px;cursor:default;font-size:13px;line-height:1}
+  .twk-x:hover{background:rgba(0,0,0,.06);color:#29261b}
+  .twk-body{padding:2px 14px 14px;display:flex;flex-direction:column;gap:10px;
+    overflow-y:auto;overflow-x:hidden;min-height:0;
+    scrollbar-width:thin;scrollbar-color:rgba(0,0,0,.15) transparent}
+  .twk-body::-webkit-scrollbar{width:8px}
+  .twk-body::-webkit-scrollbar-track{background:transparent;margin:2px}
+  .twk-body::-webkit-scrollbar-thumb{background:rgba(0,0,0,.15);border-radius:4px;
+    border:2px solid transparent;background-clip:content-box}
+  .twk-body::-webkit-scrollbar-thumb:hover{background:rgba(0,0,0,.25);
+    border:2px solid transparent;background-clip:content-box}
+  .twk-row{display:flex;flex-direction:column;gap:5px}
+  .twk-row-h{flex-direction:row;align-items:center;justify-content:space-between;gap:10px}
+  .twk-lbl{display:flex;justify-content:space-between;align-items:baseline;
+    color:rgba(41,38,27,.72)}
+  .twk-lbl>span:first-child{font-weight:500}
+  .twk-val{color:rgba(41,38,27,.5);font-variant-numeric:tabular-nums}
+
+  .twk-sect{font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+    color:rgba(41,38,27,.45);padding:10px 0 0}
+  .twk-sect:first-child{padding-top:0}
+
+  .twk-field{appearance:none;box-sizing:border-box;width:100%;min-width:0;height:26px;padding:0 8px;
+    border:.5px solid rgba(0,0,0,.1);border-radius:7px;
+    background:rgba(255,255,255,.6);color:inherit;font:inherit;outline:none}
+  .twk-field:focus{border-color:rgba(0,0,0,.25);background:rgba(255,255,255,.85)}
+  select.twk-field{padding-right:22px;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='rgba(0,0,0,.5)' d='M0 0h10L5 6z'/></svg>");
+    background-repeat:no-repeat;background-position:right 8px center}
+
+  .twk-slider{appearance:none;-webkit-appearance:none;width:100%;height:4px;margin:6px 0;
+    border-radius:999px;background:rgba(0,0,0,.12);outline:none}
+  .twk-slider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;
+    width:14px;height:14px;border-radius:50%;background:#fff;
+    border:.5px solid rgba(0,0,0,.12);box-shadow:0 1px 3px rgba(0,0,0,.2);cursor:default}
+  .twk-slider::-moz-range-thumb{width:14px;height:14px;border-radius:50%;
+    background:#fff;border:.5px solid rgba(0,0,0,.12);box-shadow:0 1px 3px rgba(0,0,0,.2);cursor:default}
+
+  .twk-seg{position:relative;display:flex;padding:2px;border-radius:8px;
+    background:rgba(0,0,0,.06);user-select:none}
+  .twk-seg-thumb{position:absolute;top:2px;bottom:2px;border-radius:6px;
+    background:rgba(255,255,255,.9);box-shadow:0 1px 2px rgba(0,0,0,.12);
+    transition:left .15s cubic-bezier(.3,.7,.4,1),width .15s}
+  .twk-seg.dragging .twk-seg-thumb{transition:none}
+  .twk-seg button{appearance:none;position:relative;z-index:1;flex:1;border:0;
+    background:transparent;color:inherit;font:inherit;font-weight:500;min-height:22px;
+    border-radius:6px;cursor:default;padding:4px 6px;line-height:1.2;
+    overflow-wrap:anywhere}
+
+  .twk-toggle{position:relative;width:32px;height:18px;border:0;border-radius:999px;
+    background:rgba(0,0,0,.15);transition:background .15s;cursor:default;padding:0}
+  .twk-toggle[data-on="1"]{background:#34c759}
+  .twk-toggle i{position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;
+    background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25);transition:transform .15s}
+  .twk-toggle[data-on="1"] i{transform:translateX(14px)}
+
+  .twk-num{display:flex;align-items:center;box-sizing:border-box;min-width:0;height:26px;padding:0 0 0 8px;
+    border:.5px solid rgba(0,0,0,.1);border-radius:7px;background:rgba(255,255,255,.6)}
+  .twk-num-lbl{font-weight:500;color:rgba(41,38,27,.6);cursor:ew-resize;
+    user-select:none;padding-right:8px}
+  .twk-num input{flex:1;min-width:0;height:100%;border:0;background:transparent;
+    font:inherit;font-variant-numeric:tabular-nums;text-align:right;padding:0 8px 0 0;
+    outline:none;color:inherit;-moz-appearance:textfield}
+  .twk-num input::-webkit-inner-spin-button,.twk-num input::-webkit-outer-spin-button{
+    -webkit-appearance:none;margin:0}
+  .twk-num-unit{padding-right:8px;color:rgba(41,38,27,.45)}
+
+  .twk-btn{appearance:none;height:26px;padding:0 12px;border:0;border-radius:7px;
+    background:rgba(0,0,0,.78);color:#fff;font:inherit;font-weight:500;cursor:default}
+  .twk-btn:hover{background:rgba(0,0,0,.88)}
+  .twk-btn.secondary{background:rgba(0,0,0,.06);color:inherit}
+  .twk-btn.secondary:hover{background:rgba(0,0,0,.1)}
+
+  .twk-swatch{appearance:none;-webkit-appearance:none;width:56px;height:22px;
+    border:.5px solid rgba(0,0,0,.1);border-radius:6px;padding:0;cursor:default;
+    background:transparent;flex-shrink:0}
+  .twk-swatch::-webkit-color-swatch-wrapper{padding:0}
+  .twk-swatch::-webkit-color-swatch{border:0;border-radius:5.5px}
+  .twk-swatch::-moz-color-swatch{border:0;border-radius:5.5px}
+
+  .twk-chips{display:flex;gap:6px}
+  .twk-chip{position:relative;appearance:none;flex:1;min-width:0;height:46px;
+    padding:0;border:0;border-radius:6px;overflow:hidden;cursor:default;
+    box-shadow:0 0 0 .5px rgba(0,0,0,.12),0 1px 2px rgba(0,0,0,.06);
+    transition:transform .12s cubic-bezier(.3,.7,.4,1),box-shadow .12s}
+  .twk-chip:hover{transform:translateY(-1px);
+    box-shadow:0 0 0 .5px rgba(0,0,0,.18),0 4px 10px rgba(0,0,0,.12)}
+  .twk-chip[data-on="1"]{box-shadow:0 0 0 1.5px rgba(0,0,0,.85),
+    0 2px 6px rgba(0,0,0,.15)}
+  .twk-chip>span{position:absolute;top:0;bottom:0;right:0;width:34%;
+    display:flex;flex-direction:column;box-shadow:-1px 0 0 rgba(0,0,0,.1)}
+  .twk-chip>span>i{flex:1;box-shadow:0 -1px 0 rgba(0,0,0,.1)}
+  .twk-chip>span>i:first-child{box-shadow:none}
+  .twk-chip svg{position:absolute;top:6px;left:6px;width:13px;height:13px;
+    filter:drop-shadow(0 1px 1px rgba(0,0,0,.3))}
+`;
+
+// ── useTweaks ───────────────────────────────────────────────────────────────
+// Single source of truth for tweak values. setTweak persists via the host
+// (__edit_mode_set_keys → host rewrites the EDITMODE block on disk).
+function useTweaks(defaults) {
+  const [values, setValues] = React.useState(defaults);
+  // Accepts either setTweak('key', value) or setTweak({ key: value, ... }) so a
+  // useState-style call doesn't write a "[object Object]" key into the persisted
+  // JSON block.
+  const setTweak = React.useCallback((keyOrEdits, val) => {
+    const edits = typeof keyOrEdits === 'object' && keyOrEdits !== null
+      ? keyOrEdits : { [keyOrEdits]: val };
+    setValues((prev) => ({ ...prev, ...edits }));
+    window.parent.postMessage({ type: '__edit_mode_set_keys', edits }, '*');
+    // Same-window signal so in-page listeners (deck-stage rail thumbnails)
+    // can react — the parent message only reaches the host, not peers.
+    window.dispatchEvent(new CustomEvent('tweakchange', { detail: edits }));
+  }, []);
+  return [values, setTweak];
+}
+
+// ── TweaksPanel ─────────────────────────────────────────────────────────────
+// Floating shell. Registers the protocol listener BEFORE announcing
+// availability — if the announce ran first, the host's activate could land
+// before our handler exists and the toolbar toggle would silently no-op.
+// The close button posts __edit_mode_dismissed so the host's toolbar toggle
+// flips off in lockstep; the host echoes __deactivate_edit_mode back which
+// is what actually hides the panel.
+function TweaksPanel({ title = 'Tweaks', children }) {
+  const [open, setOpen] = React.useState(false);
+  const dragRef = React.useRef(null);
+  const offsetRef = React.useRef({ x: 16, y: 16 });
+  const PAD = 16;
+
+  const clampToViewport = React.useCallback(() => {
+    const panel = dragRef.current;
+    if (!panel) return;
+    const w = panel.offsetWidth, h = panel.offsetHeight;
+    const maxRight = Math.max(PAD, window.innerWidth - w - PAD);
+    const maxBottom = Math.max(PAD, window.innerHeight - h - PAD);
+    offsetRef.current = {
+      x: Math.min(maxRight, Math.max(PAD, offsetRef.current.x)),
+      y: Math.min(maxBottom, Math.max(PAD, offsetRef.current.y)),
+    };
+    panel.style.right = offsetRef.current.x + 'px';
+    panel.style.bottom = offsetRef.current.y + 'px';
+  }, []);
+
+  React.useEffect(() => {
+    if (!open) return;
+    clampToViewport();
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', clampToViewport);
+      return () => window.removeEventListener('resize', clampToViewport);
+    }
+    const ro = new ResizeObserver(clampToViewport);
+    ro.observe(document.documentElement);
+    return () => ro.disconnect();
+  }, [open, clampToViewport]);
+
+  React.useEffect(() => {
+    const onMsg = (e) => {
+      const t = e?.data?.type;
+      if (t === '__activate_edit_mode') setOpen(true);
+      else if (t === '__deactivate_edit_mode') setOpen(false);
+    };
+    window.addEventListener('message', onMsg);
+    window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+    return () => window.removeEventListener('message', onMsg);
+  }, []);
+
+  const dismiss = () => {
+    setOpen(false);
+    window.parent.postMessage({ type: '__edit_mode_dismissed' }, '*');
+  };
+
+  const onDragStart = (e) => {
+    const panel = dragRef.current;
+    if (!panel) return;
+    const r = panel.getBoundingClientRect();
+    const sx = e.clientX, sy = e.clientY;
+    const startRight = window.innerWidth - r.right;
+    const startBottom = window.innerHeight - r.bottom;
+    const move = (ev) => {
+      offsetRef.current = {
+        x: startRight - (ev.clientX - sx),
+        y: startBottom - (ev.clientY - sy),
+      };
+      clampToViewport();
+    };
+    const up = () => {
+      window.removeEventListener('mousemove', move);
+      window.removeEventListener('mouseup', up);
+    };
+    window.addEventListener('mousemove', move);
+    window.addEventListener('mouseup', up);
+  };
+
+  if (!open) return null;
+  return (
+    <>
+      <style>{__TWEAKS_STYLE}</style>
+      <div ref={dragRef} className="twk-panel" data-omelette-chrome=""
+           style={{ right: offsetRef.current.x, bottom: offsetRef.current.y }}>
+        <div className="twk-hd" onMouseDown={onDragStart}>
+          <b>{title}</b>
+          <button className="twk-x" aria-label="Close tweaks"
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onClick={dismiss}>✕</button>
+        </div>
+        <div className="twk-body">
+          {children}
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ── Layout helpers ──────────────────────────────────────────────────────────
+
+function TweakSection({ label, children }) {
+  return (
+    <>
+      <div className="twk-sect">{label}</div>
+      {children}
+    </>
+  );
+}
+
+function TweakRow({ label, value, children, inline = false }) {
+  return (
+    <div className={inline ? 'twk-row twk-row-h' : 'twk-row'}>
+      <div className="twk-lbl">
+        <span>{label}</span>
+        {value != null && <span className="twk-val">{value}</span>}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+// ── Controls ────────────────────────────────────────────────────────────────
+
+function TweakSlider({ label, value, min = 0, max = 100, step = 1, unit = '', onChange }) {
+  return (
+    <TweakRow label={label} value={`${value}${unit}`}>
+      <input type="range" className="twk-slider" min={min} max={max} step={step}
+             value={value} onChange={(e) => onChange(Number(e.target.value))} />
+    </TweakRow>
+  );
+}
+
+function TweakToggle({ label, value, onChange }) {
+  return (
+    <div className="twk-row twk-row-h">
+      <div className="twk-lbl"><span>{label}</span></div>
+      <button type="button" className="twk-toggle" data-on={value ? '1' : '0'}
+              role="switch" aria-checked={!!value}
+              onClick={() => onChange(!value)}><i /></button>
+    </div>
+  );
+}
+
+function TweakRadio({ label, value, options, onChange }) {
+  const trackRef = React.useRef(null);
+  const [dragging, setDragging] = React.useState(false);
+  // The active value is read by pointer-move handlers attached for the lifetime
+  // of a drag — ref it so a stale closure doesn't fire onChange for every move.
+  const valueRef = React.useRef(value);
+  valueRef.current = value;
+
+  // Segments wrap mid-word once per-segment width runs out. The track is
+  // ~248px (280 panel − 28 body pad − 4 seg pad), each button loses 12px
+  // to its own padding, and 11.5px system-ui averages ~6.3px/char — so 2
+  // options fit ~16 chars each, 3 fit ~10. Past that (or >3 options), fall
+  // back to a dropdown rather than wrap.
+  const labelLen = (o) => String(typeof o === 'object' ? o.label : o).length;
+  const maxLen = options.reduce((m, o) => Math.max(m, labelLen(o)), 0);
+  const fitsAsSegments = maxLen <= ({ 2: 16, 3: 10 }[options.length] ?? 0);
+  if (!fitsAsSegments) {
+    // <select> emits strings — map back to the original option value so the
+    // fallback stays type-preserving (numbers, booleans) like the segment path.
+    const resolve = (s) => {
+      const m = options.find((o) => String(typeof o === 'object' ? o.value : o) === s);
+      return m === undefined ? s : typeof m === 'object' ? m.value : m;
+    };
+    return <TweakSelect label={label} value={value} options={options}
+                        onChange={(s) => onChange(resolve(s))} />;
+  }
+  const opts = options.map((o) => (typeof o === 'object' ? o : { value: o, label: o }));
+  const idx = Math.max(0, opts.findIndex((o) => o.value === value));
+  const n = opts.length;
+
+  const segAt = (clientX) => {
+    const r = trackRef.current.getBoundingClientRect();
+    const inner = r.width - 4;
+    const i = Math.floor(((clientX - r.left - 2) / inner) * n);
+    return opts[Math.max(0, Math.min(n - 1, i))].value;
+  };
+
+  const onPointerDown = (e) => {
+    setDragging(true);
+    const v0 = segAt(e.clientX);
+    if (v0 !== valueRef.current) onChange(v0);
+    const move = (ev) => {
+      if (!trackRef.current) return;
+      const v = segAt(ev.clientX);
+      if (v !== valueRef.current) onChange(v);
+    };
+    const up = () => {
+      setDragging(false);
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  };
+
+  return (
+    <TweakRow label={label}>
+      <div ref={trackRef} role="radiogroup" onPointerDown={onPointerDown}
+           className={dragging ? 'twk-seg dragging' : 'twk-seg'}>
+        <div className="twk-seg-thumb"
+             style={{ left: `calc(2px + ${idx} * (100% - 4px) / ${n})`,
+                      width: `calc((100% - 4px) / ${n})` }} />
+        {opts.map((o) => (
+          <button key={o.value} type="button" role="radio" aria-checked={o.value === value}>
+            {o.label}
+          </button>
+        ))}
+      </div>
+    </TweakRow>
+  );
+}
+
+function TweakSelect({ label, value, options, onChange }) {
+  return (
+    <TweakRow label={label}>
+      <select className="twk-field" value={value} onChange={(e) => onChange(e.target.value)}>
+        {options.map((o) => {
+          const v = typeof o === 'object' ? o.value : o;
+          const l = typeof o === 'object' ? o.label : o;
+          return <option key={v} value={v}>{l}</option>;
+        })}
+      </select>
+    </TweakRow>
+  );
+}
+
+function TweakText({ label, value, placeholder, onChange }) {
+  return (
+    <TweakRow label={label}>
+      <input className="twk-field" type="text" value={value} placeholder={placeholder}
+             onChange={(e) => onChange(e.target.value)} />
+    </TweakRow>
+  );
+}
+
+function TweakNumber({ label, value, min, max, step = 1, unit = '', onChange }) {
+  const clamp = (n) => {
+    if (min != null && n < min) return min;
+    if (max != null && n > max) return max;
+    return n;
+  };
+  const startRef = React.useRef({ x: 0, val: 0 });
+  const onScrubStart = (e) => {
+    e.preventDefault();
+    startRef.current = { x: e.clientX, val: value };
+    const decimals = (String(step).split('.')[1] || '').length;
+    const move = (ev) => {
+      const dx = ev.clientX - startRef.current.x;
+      const raw = startRef.current.val + dx * step;
+      const snapped = Math.round(raw / step) * step;
+      onChange(clamp(Number(snapped.toFixed(decimals))));
+    };
+    const up = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  };
+  return (
+    <div className="twk-num">
+      <span className="twk-num-lbl" onPointerDown={onScrubStart}>{label}</span>
+      <input type="number" value={value} min={min} max={max} step={step}
+             onChange={(e) => onChange(clamp(Number(e.target.value)))} />
+      {unit && <span className="twk-num-unit">{unit}</span>}
+    </div>
+  );
+}
+
+// Relative-luminance contrast pick — checkmarks drawn over a swatch need to
+// read on both #111 and #fafafa without per-option configuration. Hex input
+// only (#rgb / #rrggbb); named or rgb()/hsl() colors fall through to "light".
+function __twkIsLight(hex) {
+  const h = String(hex).replace('#', '');
+  const x = h.length === 3 ? h.replace(/./g, (c) => c + c) : h.padEnd(6, '0');
+  const n = parseInt(x.slice(0, 6), 16);
+  if (Number.isNaN(n)) return true;
+  const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+  return r * 299 + g * 587 + b * 114 > 148000;
+}
+
+const __TwkCheck = ({ light }) => (
+  <svg viewBox="0 0 14 14" aria-hidden="true">
+    <path d="M3 7.2 5.8 10 11 4.2" fill="none" strokeWidth="2.2"
+          strokeLinecap="round" strokeLinejoin="round"
+          stroke={light ? 'rgba(0,0,0,.78)' : '#fff'} />
+  </svg>
+);
+
+// TweakColor — curated color/palette picker. Each option is either a single
+// hex string or an array of 1-5 hex strings; the card adapts — a lone color
+// renders solid, a palette renders colors[0] as the hero (left ~2/3) with the
+// rest stacked in a sharp column on the right. onChange emits the
+// option in the shape it was passed (string stays string, array stays array).
+// Without options it falls back to the native color input for back-compat.
+function TweakColor({ label, value, options, onChange }) {
+  if (!options || !options.length) {
+    return (
+      <div className="twk-row twk-row-h">
+        <div className="twk-lbl"><span>{label}</span></div>
+        <input type="color" className="twk-swatch" value={value}
+               onChange={(e) => onChange(e.target.value)} />
+      </div>
+    );
+  }
+  // Native <input type=color> emits lowercase hex per the HTML spec, so
+  // compare case-insensitively. String() guards JSON.stringify(undefined),
+  // which returns the primitive undefined (no .toLowerCase).
+  const key = (o) => String(JSON.stringify(o)).toLowerCase();
+  const cur = key(value);
+  return (
+    <TweakRow label={label}>
+      <div className="twk-chips" role="radiogroup">
+        {options.map((o, i) => {
+          const colors = Array.isArray(o) ? o : [o];
+          const [hero, ...rest] = colors;
+          const sup = rest.slice(0, 4);
+          const on = key(o) === cur;
+          return (
+            <button key={i} type="button" className="twk-chip" role="radio"
+                    aria-checked={on} data-on={on ? '1' : '0'}
+                    aria-label={colors.join(', ')} title={colors.join(' · ')}
+                    style={{ background: hero }}
+                    onClick={() => onChange(o)}>
+              {sup.length > 0 && (
+                <span>
+                  {sup.map((c, j) => <i key={j} style={{ background: c }} />)}
+                </span>
+              )}
+              {on && <__TwkCheck light={__twkIsLight(hero)} />}
+            </button>
+          );
+        })}
+      </div>
+    </TweakRow>
+  );
+}
+
+function TweakButton({ label, onClick, secondary = false }) {
+  return (
+    <button type="button" className={secondary ? 'twk-btn secondary' : 'twk-btn'}
+            onClick={onClick}>{label}</button>
+  );
+}
+
+Object.assign(window, {
+  useTweaks, TweaksPanel, TweakSection, TweakRow,
+  TweakSlider, TweakToggle, TweakRadio, TweakSelect,
+  TweakText, TweakNumber, TweakColor, TweakButton,
+});
+
+  </script>
+
+  <!-- app.jsx -->
+  <script type="text/babel">
+// ============================================================
+// app.jsx — Root App + Context
+// ============================================================
+
+// Export AppContext BEFORE render so page components can look it up globally
+const AppContext = React.createContext(null);
+Object.assign(window, { AppContext });
+
+// Tweak defaults — host rewrites the JSON block between these markers on disk
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "accentColor": "#4F46E5"
+}/*EDITMODE-END*/;
+
+function App() {
+  // ── State ──────────────────────────────────────────────────
+  const [activePage, setActivePage] = React.useState('dashboard');
+  const [attendanceData, setAttendanceData] = React.useState(INITIAL_ATTENDANCE);
+  const [employees, setEmployees] = React.useState(INITIAL_EMPLOYEES);
+  const [settings, setSettings] = React.useState(INITIAL_SETTINGS);
+  const [toast, setToast] = React.useState(null);
+
+  // ── Tweaks — useTweaks returns [values, setTweak] array ───
+  const [tweaks, setTweak] = useTweaks(TWEAK_DEFAULTS);
+
+  // Apply CSS custom properties on :root
+  React.useEffect(() => {
+    const root = document.documentElement;
+    root.style.setProperty('--color-primary', tweaks.accentColor);
+    root.style.setProperty('--color-primary-light', tweaks.accentColor + '2e');
+  }, [tweaks.accentColor]);
+
+  // ── Actions ────────────────────────────────────────────────
+  const showToast = React.useCallback((message, type = 'success') => {
+    setToast({ message, type, id: Date.now() });
+  }, []);
+
+  const updateAttendance = React.useCallback((empId, day, data) => {
+    setAttendanceData(prev => ({
+      ...prev,
+      [empId]: { ...(prev[empId] || {}), [day]: data },
+    }));
+    showToast('Absensi berhasil disimpan');
+  }, [showToast]);
+
+  const addEmployee = React.useCallback((emp) => {
+    setEmployees(prev => [...prev, { ...emp, id: Date.now() }]);
+    showToast('Karyawan berhasil ditambahkan');
+  }, [showToast]);
+
+  const updateEmployee = React.useCallback((id, data) => {
+    setEmployees(prev => prev.map(e => e.id === id ? { ...e, ...data } : e));
+    showToast('Data karyawan berhasil diperbarui');
+  }, [showToast]);
+
+  const updateSettings = React.useCallback((data) => {
+    setSettings(prev => ({ ...prev, ...data }));
+    showToast('Pengaturan berhasil disimpan');
+  }, [showToast]);
+
+  // ── Context ────────────────────────────────────────────────
+  const ctx = React.useMemo(() => ({
+    activePage, setActivePage,
+    attendanceData, updateAttendance,
+    employees, addEmployee, updateEmployee,
+    settings, updateSettings,
+    showToast,
+  }), [activePage, attendanceData, employees, settings]);
+
+  // ── Pages ──────────────────────────────────────────────────
+  const renderPage = () => {
+    switch (activePage) {
+      case 'dashboard':   return <DashboardPage />;
+      case 'absensi':     return <AbsensiPage />;
+      case 'uang-makan':  return <UangMakanPage />;
+      case 'karyawan':    return <KaryawanPage />;
+      case 'pengaturan':  return <PengaturanPage />;
+      default:            return <DashboardPage />;
+    }
+  };
+
+  return (
+    <AppContext.Provider value={ctx}>
+      <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', fontFamily: "'Inter', sans-serif" }}>
+        <Sidebar activePage={activePage} onNavigate={setActivePage} />
+        <main style={{
+          flex: 1, overflow: 'hidden', minWidth: 0,
+          display: 'flex', flexDirection: 'column',
+          background: '#F8FAFC',
+        }}>
+          {renderPage()}
+        </main>
+      </div>
+
+      {/* Toast notification */}
+      {toast && (
+        <Toast
+          key={toast.id}
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+
+      {/* Tweaks panel */}
+      <TweaksPanel>
+        <TweakSection label="Warna Tema">
+          <TweakColor
+            label="Warna Aksen"
+            value={tweaks.accentColor}
+            options={['#4F46E5', '#059669', '#7C3AED', '#E11D48']}
+            onChange={v => setTweak('accentColor', v)}
+          />
+        </TweakSection>
+      </TweaksPanel>
+    </AppContext.Provider>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+
+  </script>
+
+</body>
+</html>
