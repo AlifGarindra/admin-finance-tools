@@ -1,11 +1,11 @@
 'use client';
 
 import { useCallback } from 'react';
-import { supabase } from '@/lib/supabase';
+import { getSupabase } from '@/lib/supabase';
 
 export function useApi() {
   const getHeaders = useCallback(async (): Promise<Record<string, string>> => {
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session } } = await getSupabase().auth.getSession();
     if (!session) return { 'Content-Type': 'application/json' };
     return {
       'Content-Type': 'application/json',

@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter } from 'next/navigation';
 import { LayoutDashboard, Calendar, DollarSign, Users, Settings, LogOut } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { getSupabase } from '@/lib/supabase';
 
 const NAV_ITEMS = [
   { id: 'dashboard',   label: 'Dashboard',   href: '/',              Icon: LayoutDashboard },
@@ -22,7 +22,7 @@ export function Sidebar() {
   };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    await getSupabase().auth.signOut();
     router.push('/login');
   };
 

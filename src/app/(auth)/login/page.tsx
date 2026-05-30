@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
+import { getSupabase } from '@/lib/supabase';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -16,7 +16,7 @@ export default function LoginPage() {
     setLoading(true);
     setError('');
 
-    const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
+    const { error: authError } = await getSupabase().auth.signInWithPassword({ email, password });
     if (authError) {
       setError('Email atau password salah. Silakan coba lagi.');
       setLoading(false);

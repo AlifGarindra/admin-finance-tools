@@ -327,7 +327,7 @@ export default function AbsensiPage() {
     setExportLoading(true);
     try {
       const mealData = await get(`/api/meal-allowance?month=${activeMonth}`);
-      exportToExcel(activeEmployees, attendances, mealData.summaries as MealAllowanceSummary[], activeMonth);
+      await exportToExcel(activeEmployees, attendances, mealData.summaries as MealAllowanceSummary[], activeMonth);
       setToast({ message: 'File berhasil diunduh', type: 'success' });
     } catch {
       setToast({ message: 'Gagal export file', type: 'error' });

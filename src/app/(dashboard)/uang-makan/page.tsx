@@ -44,7 +44,7 @@ export default function UangMakanPage() {
         get('/api/employees'),
         get(`/api/attendance?month=${activeMonth}`),
       ]);
-      exportToExcel(emps as Employee[], atts as Attendance[], summaries, activeMonth);
+      await exportToExcel(emps as Employee[], atts as Attendance[], summaries, activeMonth);
       setToast({ message: 'Rekap berhasil diunduh', type: 'success' });
     } catch {
       setToast({ message: 'Gagal export', type: 'error' });
